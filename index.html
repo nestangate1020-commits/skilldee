@@ -859,6 +859,20 @@ const COURSES = [
     ] },
 ];
 
+// ป้ายชื่อโปรแกรมสไตล์ 3D บนภาพปกคอร์ส (ใช้ตัวอักษร ไม่ใช้โลโก้จริงเพื่อเลี่ยงปัญหาเครื่องหมายการค้า)
+const LOGOS = {
+  1: "Py", 2: "React", 3: "MKT", 4: "Excel", 5: "Figma", 6: "ENG", 7: "หุ้น", 8: "SQL",
+  9: "GPT", 10: "Claude", 11: "Gemini", 12: "Copilot", 13: "MJ", 14: "SD", 15: "Canva",
+  16: "Sora", 17: "Voice", 18: "Suno", 19: "Prompt", 20: "n8n", 21: "Cursor", 22: "AI MKT",
+  23: "AI Data", 24: "NLM", 25: "Bot", 26: "ML", 27: "DS", 28: "AI Law",
+  29: "JS", 30: "Flutter", 31: "Node", 32: "Git", 33: "Cyber",
+  34: "Startup", 35: "Shop", 36: "ACC", 37: "PM", 38: "Lead",
+  39: "Ps", 40: "CapCut", 41: "Pr", 42: "Draw", 43: "3D",
+  44: "TikTok", 45: "Ads", 46: "SEO", 47: "Brand",
+  48: "中文", 49: "日本語", 50: "한국어", 51: "TOEIC",
+  52: "฿", 53: "Fund", 54: "TAX",
+};
+
 // ---------- ส่วนประกอบย่อย ----------
 function GoogleG() {
   return (
@@ -1026,14 +1040,30 @@ function App() {
   const totalPrice = cart.reduce((s, c) => s + c.price, 0);
   const totalOld = cart.reduce((s, c) => s + c.oldPrice, 0);
 
-  const Thumb = ({ c, className = "" }) => (
-    <div className={`bg-gradient-to-br ${c.color} flex items-center justify-center relative ${className}`}>
-      <PlayCircle className="w-10 h-10 text-white opacity-80" />
-      {c.bestseller && (
-        <span className="absolute top-2 left-2 bg-amber-300 text-amber-900 text-xs font-bold px-1.5 py-0.5 rounded">{t.bestseller}</span>
-      )}
-    </div>
-  );
+  const Thumb = ({ c, className = "" }) => {
+    const logo = LOGOS[c.id];
+    return (
+      <div className={`bg-gradient-to-br ${c.color} flex items-center justify-center relative overflow-hidden ${className}`}>
+        <div className="absolute top-0 left-0 right-0 h-1/2 bg-white opacity-10" />
+        <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-black opacity-10 rounded-full" />
+        {logo ? (
+          <span className="relative font-black text-white tracking-tight select-none"
+            style={{
+              fontSize: logo.length <= 3 ? "1.8rem" : logo.length <= 6 ? "1.35rem" : "1.05rem",
+              textShadow: "0 2px 0 rgba(255,255,255,0.30), 0 5px 10px rgba(0,0,0,0.45), 0 10px 20px rgba(0,0,0,0.30)",
+              transform: "perspective(240px) rotateX(14deg)",
+            }}>
+            {logo}
+          </span>
+        ) : (
+          <PlayCircle className="w-10 h-10 text-white opacity-80" />
+        )}
+        {c.bestseller && (
+          <span className="absolute top-2 left-2 bg-amber-300 text-amber-900 text-xs font-bold px-1.5 py-0.5 rounded">{t.bestseller}</span>
+        )}
+      </div>
+    );
+  };
 
   const Card = ({ c }) => (
     <button onClick={() => openCourse(c)} className="text-left bg-white rounded-lg border border-zinc-200 overflow-hidden hover:shadow-lg transition-shadow group flex sm:block">
