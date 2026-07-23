@@ -1,0 +1,1025 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>สกิลดี — เรียนออนไลน์กับผู้เชี่ยวชาญ</title>
+  <meta name="description" content="แพลตฟอร์มคอร์สเรียนออนไลน์ เรียนได้ทุกที่ ทุกเวลา" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;700;800;900&family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Noto Sans Thai', 'Noto Sans SC', 'Noto Sans JP', system-ui, sans-serif; margin: 0; }
+    #loading { display: flex; min-height: 100vh; align-items: center; justify-content: center; color: #71717a; font-weight: bold; }
+  </style>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+</head>
+<body>
+  <div id="root"><div id="loading">กำลังโหลด สกิลดี...</div></div>
+  <script type="text/babel" data-type="module">
+import React, { useState, useMemo } from "https://esm.sh/react@18.3.1";
+import { createRoot } from "https://esm.sh/react-dom@18.3.1/client";
+import {
+  Search, ShoppingCart, Star, StarHalf, Play, ChevronDown, ChevronUp,
+  Clock, Users, Globe, Award, CheckCircle2, Circle, X, ArrowLeft,
+  PlayCircle, FileText, BadgeCheck, Trash2, Languages, Home as HomeIcon, UserCircle
+} from "https://esm.sh/lucide-react@0.383.0?deps=react@18.3.1";
+
+// ---------- ระบบหลายภาษา (i18n) ----------
+const LANG_LIST = [
+  { code: "th", label: "ไทย" },
+  { code: "en", label: "English" },
+  { code: "zh", label: "中文" },
+  { code: "ja", label: "日本語" },
+];
+
+const LOCALES = { th: "th-TH", en: "en-US", zh: "zh-CN", ja: "ja-JP" };
+
+const T = {
+  th: {
+    brand: "สกิลดี", search: "ค้นหาคอร์สเรียน...", login: "เข้าสู่ระบบ", signup: "สมัครฟรี",
+    myCourses: "คอร์สของฉัน", logout: "ออกจากระบบ",
+    heroTag: "แพลตฟอร์มเรียนออนไลน์", heroTitle1: "เก่งขึ้นทุกวัน", heroTitle2: "ด้วยคอร์สจากผู้เชี่ยวชาญตัวจริง",
+    heroSub: "เลือกเรียนจากคอร์สคุณภาพหลากหลายหมวด เรียนได้ทุกที่ ทุกเวลา เป็นเจ้าของคอร์สตลอดชีพ",
+    statStudents: "ผู้เรียน 240,000+ คน", statCert: "ใบประกาศเมื่อเรียนจบ", statDevices: "เรียนได้ทุกอุปกรณ์",
+    recommended: "คอร์สแนะนำ", catCourses: "คอร์สหมวด", searchFor: "ผลการค้นหา", coursesUnit: "คอร์ส",
+    noCourse: "ไม่พบคอร์สที่ค้นหา", noCourseSub: "ลองใช้คำค้นอื่น หรือเลือกดูจากหมวดหมู่ด้านบน",
+    bestseller: "ขายดี", reviewsUnit: "รีวิว", studentsUnit: "ผู้เรียน", taughtBy: "สอนโดย", back: "กลับหน้าหลัก",
+    whatLearn: "สิ่งที่คุณจะได้เรียนรู้", courseContent: "เนื้อหาคอร์ส", chaptersUnit: "บท",
+    lecturesUnit: "บทเรียน", hoursUnit: "ชั่วโมง", minUnit: "นาที", minShort: "น.",
+    own: "คุณเป็นเจ้าของคอร์สนี้แล้ว", continueLearn: "เข้าเรียนต่อ", addCart: "เพิ่มลงตะกร้า", goCart: "ไปที่ตะกร้า",
+    tryDemo: "ทดลองเรียนทันที (เดโม)", discountTag: "ลด", lifetime: "เรียนได้ตลอดชีพ ทุกอุปกรณ์",
+    cert: "ใบประกาศเมื่อเรียนจบ", video: "วิดีโอ", levelLabel: "ระดับ",
+    levels: { beginner: "เริ่มต้น", intermediate: "ปานกลาง", all: "ทุกระดับ" },
+    cartTitle: "ตะกร้าสินค้า", inCartUnit: "คอร์สในตะกร้า", emptyCart: "ตะกร้าของคุณยังว่าง",
+    browse: "เลือกดูคอร์สเรียน", remove: "ลบออก", normalPrice: "ราคาปกติ", discountLabel: "ส่วนลด",
+    total: "ยอดรวม", payDemo: "ชำระเงิน (เดโม)", loginToPay: "เข้าสู่ระบบเพื่อชำระเงิน",
+    demoNote: "นี่คือระบบจำลอง — ไม่มีการชำระเงินจริง",
+    noEnrolled: "คุณยังไม่มีคอร์สเรียน", noEnrolledSub: "เลือกซื้อหรือทดลองเรียนคอร์สที่สนใจได้เลย",
+    findCourse: "ค้นหาคอร์ส", start: "เริ่มเรียน", finishedAll: "เรียนจบแล้ว 🎉", learned: "เรียนไปแล้ว",
+    progressLabel: "ความคืบหน้า", markDone: "ทำเครื่องหมายว่าจบ", doneMark: "เรียนจบแล้ว ✓",
+    prev: "← บทก่อนหน้า", next: "บทถัดไป →", mockVideo: "วิดีโอจำลอง", chapterN: "บทที่",
+    loginTitle: "เข้าสู่ระบบ", signupTitle: "สมัครสมาชิกฟรี",
+    authNote: "ระบบจำลอง — กรอกอีเมลอะไรก็ได้เพื่อทดลอง", yourName: "ชื่อของคุณ", email: "อีเมล", password: "รหัสผ่าน",
+    doLogin: "เข้าสู่ระบบ", doSignup: "สมัครสมาชิก", noAccount: "ยังไม่มีบัญชี? ", haveAccount: "มีบัญชีอยู่แล้ว? ",
+    toastCart: "เพิ่มลงตะกร้าแล้ว", toastPay: "ชำระเงินสำเร็จ! เริ่มเรียนได้เลย",
+    toastLogin: "เข้าสู่ระบบแล้ว", toastSignup: "สมัครสมาชิกสำเร็จ",
+    footer: "สกิลดี — ต้นแบบเพื่อการสาธิต", newUser: "ผู้เรียนใหม่",
+    navHome: "หน้าแรก", navSearch: "ค้นหา", navLearn: "ของฉัน", navCart: "ตะกร้า", navAccount: "บัญชี",
+    account: "บัญชีของฉัน", close: "ปิด",
+  },
+  en: {
+    brand: "SkillDee", search: "Search for courses...", login: "Log in", signup: "Sign up free",
+    myCourses: "My learning", logout: "Log out",
+    heroTag: "ONLINE LEARNING PLATFORM", heroTitle1: "Get better every day", heroTitle2: "with courses from real experts",
+    heroSub: "Choose from quality courses across many categories. Learn anywhere, anytime — yours for life.",
+    statStudents: "240,000+ learners", statCert: "Certificate on completion", statDevices: "Learn on any device",
+    recommended: "Recommended courses", catCourses: "Courses in ", searchFor: "Results for", coursesUnit: "courses",
+    noCourse: "No courses found", noCourseSub: "Try a different keyword or browse the categories above.",
+    bestseller: "Bestseller", reviewsUnit: "reviews", studentsUnit: "learners", taughtBy: "Taught by", back: "Back to home",
+    whatLearn: "What you'll learn", courseContent: "Course content", chaptersUnit: "sections",
+    lecturesUnit: "lectures", hoursUnit: "hours", minUnit: "min", minShort: "min",
+    own: "You own this course", continueLearn: "Continue learning", addCart: "Add to cart", goCart: "Go to cart",
+    tryDemo: "Try it now (demo)", discountTag: "off", lifetime: "Full lifetime access on all devices",
+    cert: "Certificate of completion", video: "video", levelLabel: "Level: ",
+    levels: { beginner: "Beginner", intermediate: "Intermediate", all: "All levels" },
+    cartTitle: "Shopping cart", inCartUnit: "courses in cart", emptyCart: "Your cart is empty",
+    browse: "Browse courses", remove: "Remove", normalPrice: "Original price", discountLabel: "Discount",
+    total: "Total", payDemo: "Checkout (demo)", loginToPay: "Log in to checkout",
+    demoNote: "This is a demo — no real payment is made.",
+    noEnrolled: "You have no courses yet", noEnrolledSub: "Buy or try a course you're interested in.",
+    findCourse: "Find courses", start: "Start learning", finishedAll: "Completed 🎉", learned: "Progress",
+    progressLabel: "Progress", markDone: "Mark as complete", doneMark: "Completed ✓",
+    prev: "← Previous", next: "Next →", mockVideo: "Mock video", chapterN: "Section",
+    loginTitle: "Log in", signupTitle: "Sign up free",
+    authNote: "Demo system — enter any email to try it.", yourName: "Your name", email: "Email", password: "Password",
+    doLogin: "Log in", doSignup: "Sign up", noAccount: "No account yet? ", haveAccount: "Already have an account? ",
+    toastCart: "Added to cart", toastPay: "Payment successful! Start learning now",
+    toastLogin: "Logged in", toastSignup: "Account created",
+    footer: "SkillDee — prototype for demonstration", newUser: "New learner",
+    navHome: "Home", navSearch: "Search", navLearn: "Learning", navCart: "Cart", navAccount: "Account",
+    account: "My account", close: "Close",
+  },
+  zh: {
+    brand: "SkillDee", search: "搜索课程...", login: "登录", signup: "免费注册",
+    myCourses: "我的课程", logout: "退出登录",
+    heroTag: "在线学习平台", heroTitle1: "每天进步一点", heroTitle2: "跟随真正的专家学习",
+    heroSub: "从多个类别的优质课程中选择，随时随地学习，终身拥有。",
+    statStudents: "240,000+ 学员", statCert: "结业证书", statDevices: "任何设备均可学习",
+    recommended: "推荐课程", catCourses: "分类：", searchFor: "搜索结果：", coursesUnit: "门课程",
+    noCourse: "未找到相关课程", noCourseSub: "请尝试其他关键词，或浏览上方的分类。",
+    bestseller: "畅销", reviewsUnit: "条评价", studentsUnit: "学员", taughtBy: "讲师：", back: "返回首页",
+    whatLearn: "你将学到", courseContent: "课程内容", chaptersUnit: "章节",
+    lecturesUnit: "节课", hoursUnit: "小时", minUnit: "分钟", minShort: "分",
+    own: "你已拥有此课程", continueLearn: "继续学习", addCart: "加入购物车", goCart: "前往购物车",
+    tryDemo: "立即试学（演示）", discountTag: "折扣", lifetime: "终身访问，支持所有设备",
+    cert: "结业证书", video: "视频", levelLabel: "级别：",
+    levels: { beginner: "入门", intermediate: "中级", all: "所有级别" },
+    cartTitle: "购物车", inCartUnit: "门课程", emptyCart: "购物车是空的",
+    browse: "浏览课程", remove: "移除", normalPrice: "原价", discountLabel: "折扣",
+    total: "总计", payDemo: "结算（演示）", loginToPay: "登录以结算",
+    demoNote: "这是演示系统 — 不会进行真实支付。",
+    noEnrolled: "你还没有课程", noEnrolledSub: "购买或试学感兴趣的课程吧。",
+    findCourse: "查找课程", start: "开始学习", finishedAll: "已完成 🎉", learned: "已学习",
+    progressLabel: "学习进度", markDone: "标记为完成", doneMark: "已完成 ✓",
+    prev: "← 上一节", next: "下一节 →", mockVideo: "模拟视频", chapterN: "第",
+    loginTitle: "登录", signupTitle: "免费注册",
+    authNote: "演示系统 — 输入任意邮箱即可体验。", yourName: "你的名字", email: "邮箱", password: "密码",
+    doLogin: "登录", doSignup: "注册", noAccount: "还没有账号？", haveAccount: "已有账号？",
+    toastCart: "已加入购物车", toastPay: "支付成功！开始学习吧",
+    toastLogin: "已登录", toastSignup: "注册成功",
+    footer: "SkillDee — 演示原型", newUser: "新学员",
+    navHome: "首页", navSearch: "搜索", navLearn: "课程", navCart: "购物车", navAccount: "账户",
+    account: "我的账户", close: "关闭",
+  },
+  ja: {
+    brand: "SkillDee", search: "コースを検索...", login: "ログイン", signup: "無料登録",
+    myCourses: "マイコース", logout: "ログアウト",
+    heroTag: "オンライン学習プラットフォーム", heroTitle1: "毎日成長しよう", heroTitle2: "本物の専門家から学ぶ",
+    heroSub: "さまざまなカテゴリの高品質なコースから選べます。いつでもどこでも、一生使えます。",
+    statStudents: "受講者 240,000人以上", statCert: "修了証明書", statDevices: "あらゆるデバイスで学習",
+    recommended: "おすすめコース", catCourses: "カテゴリ：", searchFor: "検索結果：", coursesUnit: "件のコース",
+    noCourse: "コースが見つかりません", noCourseSub: "別のキーワードを試すか、上のカテゴリからお選びください。",
+    bestseller: "ベストセラー", reviewsUnit: "件のレビュー", studentsUnit: "人の受講者", taughtBy: "講師：", back: "ホームに戻る",
+    whatLearn: "学習内容", courseContent: "コース内容", chaptersUnit: "セクション",
+    lecturesUnit: "レクチャー", hoursUnit: "時間", minUnit: "分", minShort: "分",
+    own: "このコースを所有しています", continueLearn: "学習を続ける", addCart: "カートに追加", goCart: "カートへ",
+    tryDemo: "今すぐ試す（デモ）", discountTag: "OFF", lifetime: "全デバイスで無期限アクセス",
+    cert: "修了証明書", video: "動画", levelLabel: "レベル：",
+    levels: { beginner: "初級", intermediate: "中級", all: "全レベル" },
+    cartTitle: "ショッピングカート", inCartUnit: "件のコース", emptyCart: "カートは空です",
+    browse: "コースを見る", remove: "削除", normalPrice: "通常価格", discountLabel: "割引",
+    total: "合計", payDemo: "購入する（デモ）", loginToPay: "ログインして購入",
+    demoNote: "これはデモです — 実際の支払いは発生しません。",
+    noEnrolled: "コースがまだありません", noEnrolledSub: "気になるコースを購入または試してみましょう。",
+    findCourse: "コースを探す", start: "学習を始める", finishedAll: "完了 🎉", learned: "進捗",
+    progressLabel: "進捗状況", markDone: "完了にする", doneMark: "完了 ✓",
+    prev: "← 前へ", next: "次へ →", mockVideo: "モック動画", chapterN: "セクション",
+    loginTitle: "ログイン", signupTitle: "無料登録",
+    authNote: "デモシステム — 任意のメールアドレスでお試しください。", yourName: "お名前", email: "メールアドレス", password: "パスワード",
+    doLogin: "ログイン", doSignup: "登録する", noAccount: "アカウントをお持ちでない方 ", haveAccount: "アカウントをお持ちの方 ",
+    toastCart: "カートに追加しました", toastPay: "支払い完了！学習を始めましょう",
+    toastLogin: "ログインしました", toastSignup: "登録が完了しました",
+    footer: "SkillDee — デモ用プロトタイプ", newUser: "新しい受講者",
+    navHome: "ホーム", navSearch: "検索", navLearn: "学習", navCart: "カート", navAccount: "アカウント",
+    account: "アカウント", close: "閉じる",
+  },
+};
+
+const CATEGORIES = [
+  { id: "all", th: "ทั้งหมด", en: "All", zh: "全部", ja: "すべて" },
+  { id: "dev", th: "เขียนโปรแกรม", en: "Programming", zh: "编程", ja: "プログラミング" },
+  { id: "biz", th: "ธุรกิจ", en: "Business", zh: "商业", ja: "ビジネス" },
+  { id: "design", th: "ออกแบบ", en: "Design", zh: "设计", ja: "デザイン" },
+  { id: "mkt", th: "การตลาด", en: "Marketing", zh: "营销", ja: "マーケティング" },
+  { id: "lang", th: "ภาษา", en: "Languages", zh: "语言", ja: "語学" },
+  { id: "fin", th: "การเงิน", en: "Finance", zh: "金融", ja: "ファイナンス" },
+];
+
+// เนื้อหาคอร์สมี 2 ภาษา (th/en) — จีน/ญี่ปุ่นจะแสดงเนื้อหาคอร์สเป็นอังกฤษ (เหมือนเว็บจริงที่คอร์สมีภาษาจำกัด)
+const COURSES = [
+  {
+    id: 1, cat: "dev", instructor: { th: "อ.ธนพล วงศ์สุวรรณ", en: "Thanapol Wongsuwan" },
+    title: { th: "Python สำหรับผู้เริ่มต้น: จากศูนย์สู่มืออาชีพ", en: "Python for Beginners: Zero to Pro" },
+    desc: {
+      th: "เรียนรู้ Python ตั้งแต่พื้นฐานจนเขียนโปรเจกต์จริงได้ ครอบคลุมตัวแปร ฟังก์ชัน OOP ไปจนถึงการทำงานกับข้อมูล",
+      en: "Learn Python from the ground up to building real projects — variables, functions, OOP, and working with data.",
+    },
+    rating: 4.7, reviews: 12840, students: 58200, price: 399, oldPrice: 1990,
+    hours: 22, lectures: 185, level: "beginner", bestseller: true, color: "from-blue-600 to-cyan-500",
+    learn: {
+      th: ["เขียนโปรแกรม Python ได้อย่างมั่นใจ", "เข้าใจ OOP และโครงสร้างข้อมูล", "สร้างโปรเจกต์จริง 5 โปรเจกต์", "พื้นฐานสู่สาย Data Science"],
+      en: ["Write Python programs with confidence", "Understand OOP and data structures", "Build 5 real-world projects", "A foundation for Data Science"],
+    },
+    sections: [
+      { title: { th: "แนะนำคอร์สและติดตั้งเครื่องมือ", en: "Introduction & Setup" },
+        lectures: [
+          { t: { th: "ยินดีต้อนรับสู่คอร์ส", en: "Welcome to the course" }, m: 5 },
+          { t: { th: "ติดตั้ง Python และ VS Code", en: "Install Python & VS Code" }, m: 12 },
+          { t: { th: "รันโปรแกรมแรกของคุณ", en: "Run your first program" }, m: 8 }] },
+      { title: { th: "พื้นฐาน Python", en: "Python Basics" },
+        lectures: [
+          { t: { th: "ตัวแปรและชนิดข้อมูล", en: "Variables & data types" }, m: 15 },
+          { t: { th: "เงื่อนไข if-else", en: "if-else conditions" }, m: 18 },
+          { t: { th: "การวนลูป for และ while", en: "for & while loops" }, m: 20 },
+          { t: { th: "ฟังก์ชัน", en: "Functions" }, m: 22 }] },
+      { title: { th: "โครงสร้างข้อมูล", en: "Data Structures" },
+        lectures: [
+          { t: { th: "List และ Tuple", en: "Lists & Tuples" }, m: 17 },
+          { t: { th: "Dictionary และ Set", en: "Dictionaries & Sets" }, m: 19 },
+          { t: { th: "แบบฝึกหัดท้ายบท", en: "Practice exercises" }, m: 10 }] },
+    ],
+  },
+  {
+    id: 2, cat: "dev", instructor: { th: "อ.กมลชนก ศรีวิไล", en: "Kamonchanok Sriwilai" },
+    title: { th: "React + Tailwind สร้างเว็บแอปสมัยใหม่", en: "React + Tailwind: Modern Web Apps" },
+    desc: {
+      th: "สร้างเว็บแอปด้วย React ตั้งแต่ component พื้นฐานจนถึง state management และ deploy ขึ้นใช้งานจริง",
+      en: "Build web apps with React — from basic components to state management and production deployment.",
+    },
+    rating: 4.8, reviews: 8320, students: 31400, price: 449, oldPrice: 2290,
+    hours: 28, lectures: 210, level: "intermediate", bestseller: true, color: "from-sky-500 to-indigo-600",
+    learn: {
+      th: ["สร้าง SPA ด้วย React Hooks", "ออกแบบ UI สวยด้วย Tailwind", "จัดการ state อย่างมืออาชีพ", "Deploy ขึ้น production"],
+      en: ["Build SPAs with React Hooks", "Design beautiful UI with Tailwind", "Manage state like a pro", "Deploy to production"],
+    },
+    sections: [
+      { title: { th: "เริ่มต้นกับ React", en: "Getting Started with React" },
+        lectures: [
+          { t: { th: "React คืออะไร ทำไมต้องใช้", en: "What is React & why use it" }, m: 10 },
+          { t: { th: "สร้างโปรเจกต์แรก", en: "Create your first project" }, m: 14 },
+          { t: { th: "JSX และ Component", en: "JSX & Components" }, m: 16 }] },
+      { title: { th: "State และ Props", en: "State & Props" },
+        lectures: [
+          { t: { th: "useState เบื้องต้น", en: "useState basics" }, m: 18 },
+          { t: { th: "ส่งข้อมูลด้วย Props", en: "Passing data with Props" }, m: 15 },
+          { t: { th: "useEffect และ lifecycle", en: "useEffect & lifecycle" }, m: 21 }] },
+    ],
+  },
+  {
+    id: 3, cat: "mkt", instructor: { th: "อ.พิมพ์ลภัส จันทร์เพ็ญ", en: "Pimlapas Chanpen" },
+    title: { th: "การตลาดดิจิทัลฉบับจับมือทำ 2026", en: "Hands-on Digital Marketing 2026" },
+    desc: {
+      th: "วางกลยุทธ์การตลาดออนไลน์ครบวงจร ตั้งแต่ Social Media, SEO, โฆษณา ไปจนถึงการวัดผล",
+      en: "End-to-end online marketing strategy: social media, SEO, ads, and analytics.",
+    },
+    rating: 4.6, reviews: 5210, students: 19800, price: 349, oldPrice: 1590,
+    hours: 14, lectures: 96, level: "beginner", bestseller: false, color: "from-rose-500 to-orange-400",
+    learn: {
+      th: ["วางแผนคอนเทนต์ที่ขายได้จริง", "ยิงโฆษณา Facebook/Google", "ทำ SEO ให้เว็บติดหน้าแรก", "อ่านและวิเคราะห์ข้อมูลการตลาด"],
+      en: ["Plan content that converts", "Run Facebook/Google ads", "SEO to rank on page one", "Read & analyze marketing data"],
+    },
+    sections: [
+      { title: { th: "ภาพรวมการตลาดดิจิทัล", en: "Digital Marketing Overview" },
+        lectures: [
+          { t: { th: "Landscape การตลาดยุคใหม่", en: "The modern marketing landscape" }, m: 12 },
+          { t: { th: "รู้จักลูกค้าด้วย Persona", en: "Know your customer with Personas" }, m: 15 }] },
+      { title: { th: "Social Media Marketing", en: "Social Media Marketing" },
+        lectures: [
+          { t: { th: "วางแผนคอนเทนต์รายเดือน", en: "Monthly content planning" }, m: 20 },
+          { t: { th: "เทคนิคเพิ่ม Engagement", en: "Techniques to boost engagement" }, m: 18 }] },
+    ],
+  },
+  {
+    id: 4, cat: "biz", instructor: { th: "อ.วีรภัทร ตั้งใจดี", en: "Weeraphat Tangjaidee" },
+    title: { th: "Excel ขั้นเทพ: สูตร Pivot และ Dashboard", en: "Excel Mastery: Formulas, Pivots & Dashboards" },
+    desc: {
+      th: "ใช้ Excel ระดับมือโปร ทั้งสูตรขั้นสูง Pivot Table และการสร้าง Dashboard นำเสนอข้อมูล",
+      en: "Use Excel like a pro: advanced formulas, Pivot Tables, and data dashboards.",
+    },
+    rating: 4.7, reviews: 9640, students: 42100, price: 299, oldPrice: 1290,
+    hours: 12, lectures: 88, level: "all", bestseller: true, color: "from-emerald-500 to-teal-600",
+    learn: {
+      th: ["สูตร VLOOKUP, XLOOKUP, INDEX-MATCH", "สรุปข้อมูลด้วย Pivot Table", "สร้าง Dashboard แบบมืออาชีพ", "ทำงานเร็วขึ้น 10 เท่า"],
+      en: ["VLOOKUP, XLOOKUP, INDEX-MATCH", "Summarize data with Pivot Tables", "Build professional dashboards", "Work 10x faster"],
+    },
+    sections: [
+      { title: { th: "สูตรที่ต้องรู้", en: "Essential Formulas" },
+        lectures: [
+          { t: { th: "สูตรพื้นฐานที่ใช้บ่อย", en: "Everyday formulas" }, m: 14 },
+          { t: { th: "XLOOKUP ฉบับสมบูรณ์", en: "XLOOKUP complete guide" }, m: 19 }] },
+      { title: { th: "Pivot Table", en: "Pivot Tables" },
+        lectures: [
+          { t: { th: "สร้าง Pivot แรกของคุณ", en: "Your first Pivot" }, m: 16 },
+          { t: { th: "Pivot ขั้นสูง", en: "Advanced Pivots" }, m: 22 }] },
+    ],
+  },
+  {
+    id: 5, cat: "design", instructor: { th: "อ.ณิชา อารีวงศ์", en: "Nicha Areewong" },
+    title: { th: "UX/UI Design ด้วย Figma ครบจบในคอร์สเดียว", en: "Complete UX/UI Design with Figma" },
+    desc: {
+      th: "ออกแบบแอปและเว็บไซต์อย่างมืออาชีพด้วย Figma พร้อมหลักการ UX ที่ใช้ได้จริง",
+      en: "Design apps and websites professionally with Figma, plus practical UX principles.",
+    },
+    rating: 4.8, reviews: 6870, students: 24600, price: 429, oldPrice: 1990,
+    hours: 18, lectures: 140, level: "beginner", bestseller: false, color: "from-fuchsia-500 to-purple-600",
+    learn: {
+      th: ["ใช้ Figma ได้คล่องทุกเครื่องมือ", "หลักการ UX Research", "ออกแบบ Design System", "สร้าง Prototype แบบ interactive"],
+      en: ["Master every Figma tool", "UX Research principles", "Design a Design System", "Build interactive prototypes"],
+    },
+    sections: [
+      { title: { th: "รู้จัก Figma", en: "Meet Figma" },
+        lectures: [
+          { t: { th: "ทัวร์หน้าจอ Figma", en: "Figma interface tour" }, m: 11 },
+          { t: { th: "เครื่องมือพื้นฐาน", en: "Core tools" }, m: 16 }] },
+      { title: { th: "หลักการ UX", en: "UX Principles" },
+        lectures: [
+          { t: { th: "Design Thinking", en: "Design Thinking" }, m: 18 },
+          { t: { th: "ทำ User Research", en: "Doing user research" }, m: 20 }] },
+    ],
+  },
+  {
+    id: 6, cat: "lang", instructor: { th: "T.Sarah Mitchell", en: "Sarah Mitchell" },
+    title: { th: "ภาษาอังกฤษเพื่อการทำงาน พูดได้ใน 30 วัน", en: "Business English: Speak in 30 Days" },
+    desc: {
+      th: "ฝึกพูดภาษาอังกฤษในสถานการณ์ทำงานจริง ประชุม อีเมล นำเสนอ และสัมภาษณ์งาน",
+      en: "Practice English for real work situations: meetings, email, presentations, and interviews.",
+    },
+    rating: 4.5, reviews: 4320, students: 15900, price: 329, oldPrice: 1490,
+    hours: 16, lectures: 120, level: "beginner", bestseller: false, color: "from-amber-500 to-red-500",
+    learn: {
+      th: ["พูดในที่ประชุมได้มั่นใจ", "เขียนอีเมลธุรกิจ", "นำเสนองานเป็นภาษาอังกฤษ", "เทคนิคสัมภาษณ์งาน"],
+      en: ["Speak confidently in meetings", "Write business emails", "Present in English", "Job interview techniques"],
+    },
+    sections: [
+      { title: { th: "เริ่มต้นอย่างมั่นใจ", en: "Start with Confidence" },
+        lectures: [
+          { t: { th: "แนะนำตัวแบบมือโปร", en: "Introduce yourself like a pro" }, m: 12 },
+          { t: { th: "Small talk ในออฟฟิศ", en: "Office small talk" }, m: 14 }] },
+      { title: { th: "การประชุม", en: "Meetings" },
+        lectures: [
+          { t: { th: "ศัพท์ในห้องประชุม", en: "Meeting vocabulary" }, m: 15 },
+          { t: { th: "แสดงความคิดเห็นอย่างสุภาพ", en: "Giving opinions politely" }, m: 17 }] },
+    ],
+  },
+  {
+    id: 7, cat: "fin", instructor: { th: "อ.ปกรณ์ เศรษฐวัฒน์", en: "Pakorn Setthawat" },
+    title: { th: "ลงทุนหุ้นมือใหม่ เข้าใจง่าย ทำได้จริง", en: "Stock Investing for Beginners" },
+    desc: {
+      th: "ปูพื้นฐานการลงทุนหุ้นสำหรับมือใหม่ อ่านงบการเงิน วิเคราะห์กิจการ และวางแผนพอร์ต (เนื้อหาเพื่อการศึกษา)",
+      en: "Investing fundamentals for beginners: reading financial statements, analyzing companies, and portfolio planning (educational content).",
+    },
+    rating: 4.6, reviews: 7150, students: 28300, price: 379, oldPrice: 1790,
+    hours: 10, lectures: 72, level: "beginner", bestseller: false, color: "from-lime-500 to-green-600",
+    learn: {
+      th: ["เข้าใจกลไกตลาดหุ้น", "อ่านงบการเงินเบื้องต้น", "หลักการกระจายความเสี่ยง", "วางแผนการลงทุนระยะยาว"],
+      en: ["Understand how the stock market works", "Read financial statements", "Diversification principles", "Plan long-term investments"],
+    },
+    sections: [
+      { title: { th: "พื้นฐานต้องรู้", en: "The Basics" },
+        lectures: [
+          { t: { th: "หุ้นคืออะไร", en: "What is a stock?" }, m: 13 },
+          { t: { th: "เปิดพอร์ตอย่างไร", en: "Opening a brokerage account" }, m: 11 }] },
+      { title: { th: "วิเคราะห์กิจการ", en: "Analyzing Companies" },
+        lectures: [
+          { t: { th: "งบการเงิน 3 งบ", en: "The 3 financial statements" }, m: 21 },
+          { t: { th: "อัตราส่วนสำคัญ", en: "Key financial ratios" }, m: 18 }] },
+    ],
+  },
+  {
+    id: 8, cat: "dev", instructor: { th: "อ.ธนพล วงศ์สุวรรณ", en: "Thanapol Wongsuwan" },
+    title: { th: "SQL และฐานข้อมูลสำหรับสาย Data", en: "SQL & Databases for Data Careers" },
+    desc: {
+      th: "เขียน SQL ดึงและวิเคราะห์ข้อมูลได้จริง ตั้งแต่ SELECT พื้นฐานถึง JOIN และ Window Functions",
+      en: "Write real SQL to query and analyze data — from basic SELECT to JOINs and Window Functions.",
+    },
+    rating: 4.7, reviews: 5980, students: 21700, price: 359, oldPrice: 1690,
+    hours: 15, lectures: 110, level: "beginner", bestseller: false, color: "from-slate-600 to-zinc-800",
+    learn: {
+      th: ["เขียน query ดึงข้อมูลได้ทุกแบบ", "JOIN หลายตารางอย่างเข้าใจ", "สรุปข้อมูลด้วย GROUP BY", "Window Functions ขั้นสูง"],
+      en: ["Write any query you need", "JOIN multiple tables with confidence", "Summarize with GROUP BY", "Advanced Window Functions"],
+    },
+    sections: [
+      { title: { th: "เริ่มต้นกับ SQL", en: "Getting Started with SQL" },
+        lectures: [
+          { t: { th: "ฐานข้อมูลคืออะไร", en: "What is a database?" }, m: 10 },
+          { t: { th: "SELECT และ WHERE", en: "SELECT & WHERE" }, m: 16 }] },
+      { title: { th: "รวมตาราง", en: "Joining Tables" },
+        lectures: [
+          { t: { th: "INNER JOIN", en: "INNER JOIN" }, m: 18 },
+          { t: { th: "LEFT JOIN และเคสจริง", en: "LEFT JOIN & real cases" }, m: 20 }] },
+    ],
+  },
+];
+
+// ---------- ส่วนประกอบย่อย ----------
+function Stars({ rating }) {
+  const full = Math.floor(rating);
+  const half = rating - full >= 0.5;
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      {[...Array(full)].map((_, i) => <Star key={i} className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />)}
+      {half && <StarHalf className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />}
+    </span>
+  );
+}
+
+// ---------- แอปหลัก ----------
+function App() {
+  const [lang, setLang] = useState("th");
+  const [langOpen, setLangOpen] = useState(false);
+  const [page, setPage] = useState("home");
+  const [course, setCourse] = useState(null);
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("all");
+  const [cart, setCart] = useState([]);
+  const [user, setUser] = useState(null);
+  const [enrolled, setEnrolled] = useState([]);
+  const [done, setDone] = useState({});
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState("login");
+  const [authName, setAuthName] = useState("");
+  const [authEmail, setAuthEmail] = useState("");
+  const [openSec, setOpenSec] = useState([0]);
+  const [current, setCurrent] = useState("0-0");
+  const [toast, setToast] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+
+  const t = T[lang];
+  // เนื้อหาคอร์สมีแค่ th/en — ภาษาอื่น fallback เป็น en
+  const L = (obj) => obj[lang] ?? obj.en ?? obj.th;
+  const fmt = (n) => n.toLocaleString(LOCALES[lang]);
+  const catName = (id) => { const c = CATEGORIES.find(x => x.id === id); return c ? c[lang] : id; };
+
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(""), 2200); };
+
+  const filtered = useMemo(() => COURSES.filter(c => {
+    const hay = (c.title.th + c.title.en + c.instructor.th + c.instructor.en + catName(c.cat)).toLowerCase();
+    return (category === "all" || c.cat === category) &&
+      (search.trim() === "" || hay.includes(search.toLowerCase()));
+  }), [search, category, lang]);
+
+  const openCourse = (c) => { setCourse(c); setOpenSec([0]); setPage("detail"); window.scrollTo(0, 0); };
+  const inCart = (id) => cart.some(c => c.id === id);
+  const isEnrolled = (id) => enrolled.includes(id);
+
+  const addToCart = (c) => {
+    if (inCart(c.id)) { setPage("cart"); return; }
+    setCart([...cart, c]); showToast(t.toastCart);
+  };
+
+  const checkout = () => {
+    if (!user) { setAuthOpen(true); return; }
+    setEnrolled([...enrolled, ...cart.map(c => c.id).filter(id => !enrolled.includes(id))]);
+    setCart([]); setPage("mylearning"); showToast(t.toastPay);
+  };
+
+  const enrollFree = (c) => {
+    if (!user) { setAuthOpen(true); return; }
+    if (!isEnrolled(c.id)) setEnrolled([...enrolled, c.id]);
+    startLearn(c);
+  };
+
+  const startLearn = (c) => { setCourse(c); setCurrent("0-0"); setOpenSec([0]); setPage("learn"); window.scrollTo(0, 0); };
+
+  const submitAuth = (e) => {
+    e.preventDefault();
+    if (!authEmail.trim()) return;
+    setUser({ name: authMode === "signup" ? (authName || t.newUser) : authEmail.split("@")[0], email: authEmail });
+    setAuthOpen(false); setAuthName(""); setAuthEmail("");
+    showToast(authMode === "signup" ? t.toastSignup : t.toastLogin);
+  };
+
+  const toggleDone = (cid, key) => {
+    const cur = done[cid] || [];
+    setDone({ ...done, [cid]: cur.includes(key) ? cur.filter(k => k !== key) : [...cur, key] });
+  };
+
+  const progress = (c) => {
+    const total = c.sections.reduce((s, sec) => s + sec.lectures.length, 0);
+    const d = (done[c.id] || []).length;
+    return total ? Math.round((d / total) * 100) : 0;
+  };
+
+  const totalPrice = cart.reduce((s, c) => s + c.price, 0);
+  const totalOld = cart.reduce((s, c) => s + c.oldPrice, 0);
+
+  const Thumb = ({ c, className = "" }) => (
+    <div className={`bg-gradient-to-br ${c.color} flex items-center justify-center relative ${className}`}>
+      <PlayCircle className="w-10 h-10 text-white opacity-80" />
+      {c.bestseller && (
+        <span className="absolute top-2 left-2 bg-amber-300 text-amber-900 text-xs font-bold px-1.5 py-0.5 rounded">{t.bestseller}</span>
+      )}
+    </div>
+  );
+
+  const Card = ({ c }) => (
+    <button onClick={() => openCourse(c)} className="text-left bg-white rounded-lg border border-zinc-200 overflow-hidden hover:shadow-lg transition-shadow group flex sm:block">
+      <Thumb c={c} className="w-28 shrink-0 sm:w-full sm:h-32" />
+      <div className="p-3 flex-1 min-w-0">
+        <h3 className="font-bold text-sm text-zinc-900 leading-snug line-clamp-2 group-hover:text-violet-700">{L(c.title)}</h3>
+        <p className="text-xs text-zinc-500 mt-1">{L(c.instructor)}</p>
+        <div className="flex items-center gap-1.5 mt-1.5">
+          <span className="text-sm font-bold text-amber-700">{c.rating}</span>
+          <Stars rating={c.rating} />
+          <span className="text-xs text-zinc-400">({fmt(c.reviews)})</span>
+        </div>
+        <div className="flex items-baseline gap-2 mt-1.5">
+          <span className="font-extrabold text-zinc-900">฿{fmt(c.price)}</span>
+          <span className="text-xs text-zinc-400 line-through">฿{fmt(c.oldPrice)}</span>
+        </div>
+      </div>
+    </button>
+  );
+
+  // ---------- Header ----------
+  const Header = (
+    <header className="sticky top-0 z-40 bg-white border-b border-zinc-200 shadow-sm">
+      <div className="max-w-6xl mx-auto px-3 py-2.5 flex items-center gap-2 sm:gap-3">
+        <button onClick={() => setPage("home")} className="flex items-center gap-1 shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-violet-700 text-white font-black flex items-center justify-center text-lg">ส</div>
+          <span className="font-extrabold text-lg text-zinc-900 hidden sm:inline">{t.brand}</span>
+        </button>
+        <div className="flex-1 relative hidden sm:block">
+          <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); if (page !== "home") setPage("home"); }}
+            placeholder={t.search}
+            className="w-full bg-zinc-100 border border-zinc-200 rounded-full pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:bg-white"
+          />
+        </div>
+        <div className="flex-1 sm:hidden" />
+
+        {/* ปุ่มเลือกภาษา */}
+        <div className="relative shrink-0">
+          <button onClick={(e) => { e.stopPropagation(); setLangOpen(!langOpen); setMenuOpen(false); }}
+            className="flex items-center gap-1 border border-zinc-300 rounded-full px-2.5 py-1.5 text-sm font-bold hover:border-zinc-900"
+            aria-label="Change language">
+            <Languages className="w-4 h-4" />
+            <span className="hidden sm:inline">{LANG_LIST.find(l => l.code === lang)?.label}</span>
+            <span className="sm:hidden uppercase">{lang}</span>
+          </button>
+          {langOpen && (
+            <div className="absolute right-0 top-11 bg-white border border-zinc-200 rounded-lg shadow-xl w-36 py-1 z-50">
+              {LANG_LIST.map(l => (
+                <button key={l.code} onClick={() => { setLang(l.code); setLangOpen(false); }}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-zinc-50 ${lang === l.code ? "font-bold text-violet-700 bg-violet-50" : ""}`}>
+                  {l.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <button onClick={() => setPage("cart")} className="relative p-2 shrink-0 hidden sm:block" aria-label={t.cartTitle}>
+          <ShoppingCart className="w-5 h-5 text-zinc-700" />
+          {cart.length > 0 && <span className="absolute -top-0.5 -right-0.5 bg-violet-700 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">{cart.length}</span>}
+        </button>
+        {user ? (
+          <button onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); setLangOpen(false); }}
+            className="w-8 h-8 rounded-full bg-zinc-900 text-white text-sm font-bold hidden sm:flex items-center justify-center shrink-0">
+            {user.name[0].toUpperCase()}
+          </button>
+        ) : (
+          <div className="hidden sm:flex gap-1.5 shrink-0">
+            <button onClick={() => { setAuthMode("login"); setAuthOpen(true); }} className="text-sm font-bold border border-zinc-900 px-3 py-1.5 rounded hover:bg-zinc-100">{t.login}</button>
+            <button onClick={() => { setAuthMode("signup"); setAuthOpen(true); }} className="text-sm font-bold bg-zinc-900 text-white px-3 py-1.5 rounded hover:bg-zinc-700 hidden md:block">{t.signup}</button>
+          </div>
+        )}
+      </div>
+      {/* ช่องค้นหาสำหรับมือถือ */}
+      <div className="px-3 pb-2.5 sm:hidden">
+        <div className="relative">
+          <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            id="search-mobile"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); if (page !== "home") setPage("home"); }}
+            placeholder={t.search}
+            className="w-full bg-zinc-100 border border-zinc-200 rounded-full pl-9 pr-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-violet-500 focus:bg-white"
+          />
+        </div>
+      </div>
+      {user && menuOpen && (
+        <div className="absolute right-3 top-14 bg-white border border-zinc-200 rounded-lg shadow-xl w-56 py-2 z-50">
+          <div className="px-4 py-2 border-b border-zinc-100">
+            <p className="font-bold text-sm">{user.name}</p>
+            <p className="text-xs text-zinc-500 truncate">{user.email}</p>
+          </div>
+          <button onClick={() => { setPage("mylearning"); setMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm hover:bg-zinc-50">{t.myCourses}</button>
+          <button onClick={() => { setUser(null); setMenuOpen(false); setPage("home"); }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-zinc-50">{t.logout}</button>
+        </div>
+      )}
+    </header>
+  );
+
+  // ---------- หน้าแรก ----------
+  const Home = (
+    <div>
+      <section className="bg-zinc-900 text-white">
+        <div className="max-w-6xl mx-auto px-4 py-10 sm:py-14">
+          <p className="text-violet-300 font-bold text-sm tracking-wide">{t.heroTag}</p>
+          <h1 className="text-3xl sm:text-4xl font-extrabold mt-2 leading-tight">{t.heroTitle1}<br />{t.heroTitle2}</h1>
+          <p className="text-zinc-300 mt-3 max-w-xl">{t.heroSub}</p>
+          <div className="flex flex-wrap gap-6 mt-6 text-sm">
+            <span className="flex items-center gap-2"><Users className="w-4 h-4 text-violet-300" /> {t.statStudents}</span>
+            <span className="flex items-center gap-2"><Award className="w-4 h-4 text-violet-300" /> {t.statCert}</span>
+            <span className="flex items-center gap-2"><Globe className="w-4 h-4 text-violet-300" /> {t.statDevices}</span>
+          </div>
+        </div>
+      </section>
+
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
+          {CATEGORIES.map(cat => (
+            <button key={cat.id} onClick={() => setCategory(cat.id)}
+              className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-bold border transition-colors ${category === cat.id ? "bg-zinc-900 text-white border-zinc-900" : "bg-white text-zinc-700 border-zinc-300 hover:border-zinc-900"}`}>
+              {cat[lang]}
+            </button>
+          ))}
+        </div>
+
+        <h2 className="font-extrabold text-xl text-zinc-900 mt-5 mb-3">
+          {search ? `${t.searchFor} "${search}"` : category === "all" ? t.recommended : `${t.catCourses}${catName(category)}`}
+          <span className="text-sm font-normal text-zinc-500 ml-2">{filtered.length} {t.coursesUnit}</span>
+        </h2>
+
+        {filtered.length === 0 ? (
+          <div className="text-center py-16 text-zinc-500">
+            <Search className="w-10 h-10 mx-auto mb-3 text-zinc-300" />
+            <p className="font-bold text-zinc-700">{t.noCourse}</p>
+            <p className="text-sm mt-1">{t.noCourseSub}</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            {filtered.map(c => <Card key={c.id} c={c} />)}
+          </div>
+        )}
+      </div>
+
+      <footer className="bg-zinc-900 text-zinc-400 text-sm mt-10">
+        <div className="max-w-6xl mx-auto px-4 py-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <span className="font-bold text-white">{t.footer}</span>
+          <div className="flex items-center gap-2">
+            <Languages className="w-4 h-4" />
+            {LANG_LIST.map(l => (
+              <button key={l.code} onClick={() => setLang(l.code)}
+                className={`hover:text-white ${lang === l.code ? "text-white font-bold underline" : ""}`}>{l.label}</button>
+            ))}
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+
+  // ---------- หน้ารายละเอียดคอร์ส ----------
+  const Detail = course && (
+    <div className="pb-24 sm:pb-0">
+      <div className="bg-zinc-900 text-white">
+        <div className="max-w-6xl mx-auto px-4 py-6">
+          <button onClick={() => setPage("home")} className="flex items-center gap-1 text-sm text-zinc-300 hover:text-white mb-3">
+            <ArrowLeft className="w-4 h-4" /> {t.back}
+          </button>
+          <p className="text-violet-300 text-sm font-bold">{catName(course.cat)}</p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold mt-1">{L(course.title)}</h1>
+          <p className="text-zinc-300 mt-2 max-w-2xl">{L(course.desc)}</p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-sm">
+            {course.bestseller && <span className="bg-amber-300 text-amber-900 text-xs font-bold px-2 py-0.5 rounded">{t.bestseller}</span>}
+            <span className="flex items-center gap-1"><span className="font-bold text-amber-400">{course.rating}</span><Stars rating={course.rating} /><span className="text-zinc-400">({fmt(course.reviews)} {t.reviewsUnit})</span></span>
+            <span className="text-zinc-300">{fmt(course.students)} {t.studentsUnit}</span>
+          </div>
+          <p className="text-sm text-zinc-400 mt-1">{t.taughtBy} <span className="text-violet-300 font-bold">{L(course.instructor)}</span></p>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 py-6 grid lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="border border-zinc-200 rounded-lg p-4">
+            <h2 className="font-extrabold text-lg mb-3">{t.whatLearn}</h2>
+            <ul className="grid sm:grid-cols-2 gap-2">
+              {L(course.learn).map((l, i) => (
+                <li key={i} className="flex gap-2 text-sm text-zinc-700"><CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />{l}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h2 className="font-extrabold text-lg mb-1">{t.courseContent}</h2>
+            <p className="text-sm text-zinc-500 mb-3">{course.sections.length} {t.chaptersUnit} • {course.lectures} {t.lecturesUnit} • {course.hours} {t.hoursUnit}</p>
+            <div className="border border-zinc-200 rounded-lg divide-y divide-zinc-200 overflow-hidden">
+              {course.sections.map((sec, si) => (
+                <div key={si}>
+                  <button onClick={() => setOpenSec(openSec.includes(si) ? openSec.filter(x => x !== si) : [...openSec, si])}
+                    className="w-full flex items-center justify-between px-4 py-3 bg-zinc-50 hover:bg-zinc-100 text-left">
+                    <span className="font-bold text-sm">{L(sec.title)}</span>
+                    <span className="flex items-center gap-2 text-xs text-zinc-500">
+                      {sec.lectures.length} {t.lecturesUnit}
+                      {openSec.includes(si) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </span>
+                  </button>
+                  {openSec.includes(si) && sec.lectures.map((lec, li) => (
+                    <div key={li} className="flex items-center justify-between px-4 py-2.5 text-sm bg-white">
+                      <span className="flex items-center gap-2 text-zinc-700"><Play className="w-3.5 h-3.5 text-zinc-400" />{L(lec.t)}</span>
+                      <span className="text-xs text-zinc-400">{lec.m} {t.minUnit}</span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:col-span-1">
+          <div className="border border-zinc-200 rounded-lg overflow-hidden shadow-lg lg:sticky lg:top-20 bg-white">
+            <Thumb c={course} className="h-36 w-full" />
+            <div className="p-4">
+              {isEnrolled(course.id) ? (
+                <>
+                  <p className="text-sm text-emerald-700 font-bold flex items-center gap-1 mb-3"><BadgeCheck className="w-4 h-4" /> {t.own}</p>
+                  <button onClick={() => startLearn(course)} className="w-full bg-violet-700 hover:bg-violet-800 text-white font-bold py-3 rounded-lg">{t.continueLearn}</button>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <span className="text-3xl font-extrabold">฿{fmt(course.price)}</span>
+                    <span className="text-zinc-400 line-through">฿{fmt(course.oldPrice)}</span>
+                    <span className="text-red-600 text-sm font-bold">{Math.round((1 - course.price / course.oldPrice) * 100)}% {t.discountTag}</span>
+                  </div>
+                  <button onClick={() => addToCart(course)} className="w-full bg-violet-700 hover:bg-violet-800 text-white font-bold py-3 rounded-lg mt-4">
+                    {inCart(course.id) ? t.goCart : t.addCart}
+                  </button>
+                  <button onClick={() => enrollFree(course)} className="w-full border border-zinc-900 font-bold py-3 rounded-lg mt-2 hover:bg-zinc-50">{t.tryDemo}</button>
+                </>
+              )}
+              <ul className="mt-4 space-y-1.5 text-sm text-zinc-600">
+                <li className="flex gap-2"><Clock className="w-4 h-4 mt-0.5 text-zinc-400" />{t.video} {course.hours} {t.hoursUnit}</li>
+                <li className="flex gap-2"><FileText className="w-4 h-4 mt-0.5 text-zinc-400" />{course.lectures} {t.lecturesUnit} • {t.levelLabel}{t.levels[course.level]}</li>
+                <li className="flex gap-2"><Globe className="w-4 h-4 mt-0.5 text-zinc-400" />{t.lifetime}</li>
+                <li className="flex gap-2"><Award className="w-4 h-4 mt-0.5 text-zinc-400" />{t.cert}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* แถบซื้อคอร์สติดด้านล่าง (มือถือ) */}
+      {!isEnrolled(course.id) && (
+        <div className="sm:hidden fixed bottom-16 left-0 right-0 bg-white border-t border-zinc-200 px-3 py-2.5 flex items-center gap-3 z-30 shadow-lg">
+          <div className="shrink-0">
+            <p className="font-extrabold text-lg leading-tight">฿{fmt(course.price)}</p>
+            <p className="text-xs text-zinc-400 line-through leading-tight">฿{fmt(course.oldPrice)}</p>
+          </div>
+          <button onClick={() => addToCart(course)} className="flex-1 bg-violet-700 active:bg-violet-800 text-white font-bold py-3 rounded-lg text-sm">
+            {inCart(course.id) ? t.goCart : t.addCart}
+          </button>
+        </div>
+      )}
+      {isEnrolled(course.id) && (
+        <div className="sm:hidden fixed bottom-16 left-0 right-0 bg-white border-t border-zinc-200 px-3 py-2.5 z-30 shadow-lg">
+          <button onClick={() => startLearn(course)} className="w-full bg-violet-700 active:bg-violet-800 text-white font-bold py-3 rounded-lg text-sm">
+            {t.continueLearn}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
+  // ---------- หน้าเรียน ----------
+  const Learn = course && (() => {
+    const [si, li] = current.split("-").map(Number);
+    const lec = course.sections[si]?.lectures[li];
+    const flat = [];
+    course.sections.forEach((sec, s) => sec.lectures.forEach((l, i) => flat.push(`${s}-${i}`)));
+    const idx = flat.indexOf(current);
+    const pct = progress(course);
+    return (
+      <div className="max-w-6xl mx-auto lg:px-4 lg:py-4 grid lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2">
+          <div className="bg-black aspect-video flex flex-col items-center justify-center text-white relative lg:rounded-lg overflow-hidden">
+            <div className={`absolute inset-0 bg-gradient-to-br ${course.color} opacity-30`} />
+            <Play className="w-16 h-16 text-white relative" />
+            <p className="relative mt-3 font-bold px-4 text-center">{lec && L(lec.t)}</p>
+            <p className="relative text-sm text-zinc-300">{t.mockVideo} • {lec?.m} {t.minUnit}</p>
+          </div>
+          <div className="px-4 lg:px-0 py-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h1 className="font-extrabold text-lg leading-snug">{lec && L(lec.t)}</h1>
+                <p className="text-sm text-zinc-500 mt-0.5">{L(course.title)}</p>
+              </div>
+              <button onClick={() => toggleDone(course.id, current)}
+                className={`shrink-0 text-sm font-bold px-3 py-2 rounded-lg border ${((done[course.id]) || []).includes(current) ? "bg-emerald-600 text-white border-emerald-600" : "border-zinc-300 hover:border-zinc-900"}`}>
+                {((done[course.id]) || []).includes(current) ? t.doneMark : t.markDone}
+              </button>
+            </div>
+            <div className="flex gap-2 mt-3">
+              <button disabled={idx <= 0} onClick={() => setCurrent(flat[idx - 1])}
+                className="flex-1 border border-zinc-300 rounded-lg py-2 text-sm font-bold disabled:opacity-40 hover:border-zinc-900">{t.prev}</button>
+              <button disabled={idx >= flat.length - 1}
+                onClick={() => {
+                  const cur = done[course.id] || [];
+                  if (!cur.includes(current)) setDone({ ...done, [course.id]: [...cur, current] });
+                  setCurrent(flat[idx + 1]);
+                }}
+                className="flex-1 bg-violet-700 text-white rounded-lg py-2 text-sm font-bold disabled:opacity-40 hover:bg-violet-800">{t.next}</button>
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:col-span-1 px-4 lg:px-0 pb-6">
+          <div className="border border-zinc-200 rounded-lg overflow-hidden">
+            <div className="p-3 bg-zinc-50 border-b border-zinc-200">
+              <div className="flex justify-between text-sm font-bold"><span>{t.progressLabel}</span><span>{pct}%</span></div>
+              <div className="h-2 bg-zinc-200 rounded-full mt-2 overflow-hidden">
+                <div className="h-full bg-violet-700 rounded-full transition-all" style={{ width: `${pct}%` }} />
+              </div>
+            </div>
+            <div className="max-h-96 overflow-y-auto divide-y divide-zinc-100">
+              {course.sections.map((sec, s) => (
+                <div key={s}>
+                  <p className="px-3 py-2 text-xs font-bold text-zinc-500 bg-zinc-50 uppercase">{t.chapterN} {s + 1}: {L(sec.title)}</p>
+                  {sec.lectures.map((l, i) => {
+                    const key = `${s}-${i}`;
+                    const active = key === current;
+                    const fin = ((done[course.id]) || []).includes(key);
+                    return (
+                      <button key={key} onClick={() => setCurrent(key)}
+                        className={`w-full flex items-center gap-2 px-3 py-2.5 text-left text-sm ${active ? "bg-violet-50 border-l-4 border-violet-700" : "hover:bg-zinc-50 border-l-4 border-transparent"}`}>
+                        {fin ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> : <Circle className="w-4 h-4 text-zinc-300 shrink-0" />}
+                        <span className={`flex-1 ${active ? "font-bold text-violet-900" : "text-zinc-700"}`}>{L(l.t)}</span>
+                        <span className="text-xs text-zinc-400">{l.m} {t.minShort}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  })();
+
+  // ---------- ตะกร้า ----------
+  const Cart = (
+    <div className="max-w-3xl mx-auto px-4 py-6">
+      <h1 className="text-2xl font-extrabold">{t.cartTitle}</h1>
+      <p className="text-sm text-zinc-500 mt-1">{cart.length} {t.inCartUnit}</p>
+      {cart.length === 0 ? (
+        <div className="text-center py-16 border border-dashed border-zinc-300 rounded-lg mt-4">
+          <ShoppingCart className="w-10 h-10 mx-auto text-zinc-300 mb-3" />
+          <p className="font-bold text-zinc-700">{t.emptyCart}</p>
+          <button onClick={() => setPage("home")} className="mt-4 bg-violet-700 text-white font-bold px-5 py-2.5 rounded-lg hover:bg-violet-800">{t.browse}</button>
+        </div>
+      ) : (
+        <>
+          <div className="divide-y divide-zinc-200 border border-zinc-200 rounded-lg mt-4 overflow-hidden">
+            {cart.map(c => (
+              <div key={c.id} className="flex gap-3 p-3 bg-white">
+                <Thumb c={c} className="w-24 h-16 rounded shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <button onClick={() => openCourse(c)} className="font-bold text-sm text-left leading-snug hover:text-violet-700 line-clamp-2">{L(c.title)}</button>
+                  <p className="text-xs text-zinc-500 mt-0.5">{L(c.instructor)}</p>
+                  <button onClick={() => setCart(cart.filter(x => x.id !== c.id))} className="text-xs text-red-600 font-bold mt-1 flex items-center gap-1"><Trash2 className="w-3 h-3" /> {t.remove}</button>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="font-extrabold">฿{fmt(c.price)}</p>
+                  <p className="text-xs text-zinc-400 line-through">฿{fmt(c.oldPrice)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="border border-zinc-200 rounded-lg p-4 mt-4 bg-zinc-50">
+            <div className="flex justify-between text-sm text-zinc-600"><span>{t.normalPrice}</span><span className="line-through">฿{fmt(totalOld)}</span></div>
+            <div className="flex justify-between text-sm text-red-600 font-bold mt-1"><span>{t.discountLabel}</span><span>-฿{fmt(totalOld - totalPrice)}</span></div>
+            <div className="flex justify-between text-xl font-extrabold mt-2 pt-2 border-t border-zinc-200"><span>{t.total}</span><span>฿{fmt(totalPrice)}</span></div>
+            <button onClick={checkout} className="w-full bg-violet-700 hover:bg-violet-800 text-white font-bold py-3 rounded-lg mt-4">
+              {user ? t.payDemo : t.loginToPay}
+            </button>
+            <p className="text-xs text-zinc-400 text-center mt-2">{t.demoNote}</p>
+          </div>
+        </>
+      )}
+    </div>
+  );
+
+  // ---------- คอร์สของฉัน ----------
+  const myCourses = COURSES.filter(c => enrolled.includes(c.id));
+  const MyLearning = (
+    <div className="max-w-6xl mx-auto px-4 py-6">
+      <h1 className="text-2xl font-extrabold">{t.myCourses}</h1>
+      {myCourses.length === 0 ? (
+        <div className="text-center py-16 border border-dashed border-zinc-300 rounded-lg mt-4">
+          <PlayCircle className="w-10 h-10 mx-auto text-zinc-300 mb-3" />
+          <p className="font-bold text-zinc-700">{t.noEnrolled}</p>
+          <p className="text-sm text-zinc-500 mt-1">{t.noEnrolledSub}</p>
+          <button onClick={() => setPage("home")} className="mt-4 bg-violet-700 text-white font-bold px-5 py-2.5 rounded-lg hover:bg-violet-800">{t.findCourse}</button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+          {myCourses.map(c => {
+            const pct = progress(c);
+            return (
+              <button key={c.id} onClick={() => startLearn(c)} className="text-left border border-zinc-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow bg-white">
+                <Thumb c={c} className="h-28 w-full" />
+                <div className="p-3">
+                  <h3 className="font-bold text-sm leading-snug line-clamp-2">{L(c.title)}</h3>
+                  <p className="text-xs text-zinc-500 mt-1">{L(c.instructor)}</p>
+                  <div className="h-1.5 bg-zinc-200 rounded-full mt-3 overflow-hidden">
+                    <div className="h-full bg-violet-700 rounded-full" style={{ width: `${pct}%` }} />
+                  </div>
+                  <p className="text-xs text-zinc-500 mt-1">{pct === 0 ? t.start : pct === 100 ? t.finishedAll : `${t.learned} ${pct}%`}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+
+  // ---------- Modal สมัคร/ล็อกอิน ----------
+  const AuthModal = authOpen && (
+    <div className="fixed inset-0 z-50 bg-black flex items-center justify-center p-4 bg-opacity-50" onClick={() => setAuthOpen(false)}>
+      <div className="bg-white rounded-xl w-full max-w-sm p-6 relative" onClick={e => e.stopPropagation()}>
+        <button onClick={() => setAuthOpen(false)} className="absolute top-3 right-3 p-1 text-zinc-400 hover:text-zinc-900" aria-label="close"><X className="w-5 h-5" /></button>
+        <h2 className="text-xl font-extrabold">{authMode === "login" ? t.loginTitle : t.signupTitle}</h2>
+        <p className="text-sm text-zinc-500 mt-1">{t.authNote}</p>
+        <div className="mt-4 space-y-3">
+          {authMode === "signup" && (
+            <input value={authName} onChange={e => setAuthName(e.target.value)} placeholder={t.yourName}
+              className="w-full border border-zinc-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" />
+          )}
+          <input value={authEmail} onChange={e => setAuthEmail(e.target.value)} type="email" placeholder={t.email}
+            className="w-full border border-zinc-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" />
+          <input type="password" placeholder={t.password}
+            className="w-full border border-zinc-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" />
+          <button onClick={submitAuth} className="w-full bg-violet-700 hover:bg-violet-800 text-white font-bold py-3 rounded-lg">
+            {authMode === "login" ? t.doLogin : t.doSignup}
+          </button>
+        </div>
+        <p className="text-sm text-center mt-4 text-zinc-500">
+          {authMode === "login" ? t.noAccount : t.haveAccount}
+          <button onClick={() => setAuthMode(authMode === "login" ? "signup" : "login")} className="text-violet-700 font-bold">
+            {authMode === "login" ? t.signup : t.doLogin}
+          </button>
+        </p>
+      </div>
+    </div>
+  );
+
+  // ---------- แถบเมนูล่าง (มือถือ) ----------
+  const BottomNav = (
+    <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-200 z-40 grid grid-cols-5">
+      {[
+        { k: "home", icon: HomeIcon, label: t.navHome, act: () => { setPage("home"); window.scrollTo(0, 0); } },
+        { k: "searchtab", icon: Search, label: t.navSearch, act: () => { setPage("home"); setTimeout(() => { const el = document.getElementById("search-mobile"); if (el) { el.focus(); window.scrollTo(0, 0); } }, 60); } },
+        { k: "mylearning", icon: PlayCircle, label: t.navLearn, act: () => setPage("mylearning") },
+        { k: "cart", icon: ShoppingCart, label: t.navCart, act: () => setPage("cart"), badge: cart.length },
+        { k: "account", icon: UserCircle, label: t.navAccount, act: () => setAccountOpen(true) },
+      ].map(item => {
+        const active = page === item.k;
+        const Icon = item.icon;
+        return (
+          <button key={item.k} onClick={item.act} className="flex flex-col items-center justify-center gap-0.5 py-1.5 relative">
+            <span className="relative">
+              <Icon className={`w-5 h-5 ${active ? "text-violet-700" : "text-zinc-500"}`} />
+              {item.badge > 0 && (
+                <span className="absolute -top-1.5 -right-2 bg-violet-700 text-white text-xs font-bold w-4 h-4 rounded-full flex items-center justify-center">{item.badge}</span>
+              )}
+            </span>
+            <span className={`text-xs leading-none w-full text-center truncate px-0.5 ${active ? "text-violet-700 font-bold" : "text-zinc-500"}`}>{item.label}</span>
+          </button>
+        );
+      })}
+    </nav>
+  );
+
+  // ---------- แผงบัญชีแบบเลื่อนขึ้น (มือถือ) ----------
+  const AccountSheet = accountOpen && (
+    <div className="fixed inset-0 z-50 sm:hidden" onClick={() => setAccountOpen(false)}>
+      <div className="absolute inset-0 bg-black bg-opacity-50" />
+      <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-5 pb-8" onClick={e => e.stopPropagation()}>
+        <div className="w-10 h-1 bg-zinc-300 rounded-full mx-auto mb-4" />
+        {user ? (
+          <>
+            <div className="flex items-center gap-3 pb-4 border-b border-zinc-100">
+              <div className="w-11 h-11 rounded-full bg-zinc-900 text-white font-bold flex items-center justify-center text-lg">{user.name[0].toUpperCase()}</div>
+              <div className="min-w-0">
+                <p className="font-bold">{user.name}</p>
+                <p className="text-sm text-zinc-500 truncate">{user.email}</p>
+              </div>
+            </div>
+            <button onClick={() => { setPage("mylearning"); setAccountOpen(false); }} className="w-full text-left py-3.5 font-bold border-b border-zinc-100">{t.myCourses}</button>
+            <button onClick={() => { setUser(null); setAccountOpen(false); setPage("home"); }} className="w-full text-left py-3.5 font-bold text-red-600">{t.logout}</button>
+          </>
+        ) : (
+          <>
+            <h2 className="font-extrabold text-lg mb-4">{t.account}</h2>
+            <button onClick={() => { setAuthMode("login"); setAuthOpen(true); setAccountOpen(false); }} className="w-full bg-violet-700 text-white font-bold py-3.5 rounded-lg">{t.login}</button>
+            <button onClick={() => { setAuthMode("signup"); setAuthOpen(true); setAccountOpen(false); }} className="w-full border border-zinc-900 font-bold py-3.5 rounded-lg mt-2">{t.signup}</button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-white text-zinc-900 pb-16 sm:pb-0"
+      style={{ fontFamily: "'Noto Sans Thai', 'Noto Sans SC', 'Noto Sans JP', 'Sarabun', system-ui, sans-serif" }}
+      onClick={() => { if (menuOpen) setMenuOpen(false); if (langOpen) setLangOpen(false); }}>
+      {Header}
+      {page === "home" && Home}
+      {page === "detail" && Detail}
+      {page === "learn" && Learn}
+      {page === "cart" && Cart}
+      {page === "mylearning" && MyLearning}
+      {AuthModal}
+      {BottomNav}
+      {AccountSheet}
+      {toast && (
+        <div className="fixed bottom-20 sm:bottom-5 left-1/2 -translate-x-1/2 bg-zinc-900 text-white text-sm font-bold px-4 py-2.5 rounded-full shadow-lg z-50 whitespace-nowrap">
+          {toast}
+        </div>
+      )}
+    </div>
+  );
+}
+
+
+createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
