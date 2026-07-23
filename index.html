@@ -17,13 +17,27 @@
 <body>
   <div id="root"><div id="loading">กำลังโหลด สกิลดี...</div></div>
   <script type="text/babel" data-type="module">
-import React, { useState, useMemo } from "https://esm.sh/react@18.3.1";
+import React, { useState, useMemo, useEffect } from "https://esm.sh/react@18.3.1";
 import { createRoot } from "https://esm.sh/react-dom@18.3.1/client";
 import {
   Search, ShoppingCart, Star, StarHalf, Play, ChevronDown, ChevronUp,
   Clock, Users, Globe, Award, CheckCircle2, Circle, X, ArrowLeft,
   PlayCircle, FileText, BadgeCheck, Trash2, Languages, Home as HomeIcon, UserCircle
 } from "https://esm.sh/lucide-react@0.383.0?deps=react@18.3.1";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+// ---------- Firebase (ระบบสมาชิกจริงผ่าน Google) ----------
+const firebaseConfig = {
+  apiKey: "AIzaSyDyVlh5j9TR3YrqxLcoEUAIJXiewGwMiYY",
+  authDomain: "skilldee.firebaseapp.com",
+  projectId: "skilldee",
+  storageBucket: "skilldee.firebasestorage.app",
+  messagingSenderId: "265655135216",
+  appId: "1:265655135216:web:4a708ca6c77ae8909c0b35",
+};
+const fbApp = initializeApp(firebaseConfig);
+const auth = getAuth(fbApp);
 
 // ---------- ระบบหลายภาษา (i18n) ----------
 const LANG_LIST = [
@@ -67,6 +81,7 @@ const T = {
     footer: "สกิลดี — ต้นแบบเพื่อการสาธิต", newUser: "ผู้เรียนใหม่",
     navHome: "หน้าแรก", navSearch: "ค้นหา", navLearn: "ของฉัน", navCart: "ตะกร้า", navAccount: "บัญชี",
     account: "บัญชีของฉัน", close: "ปิด",
+    googleBtn: "เข้าสู่ระบบด้วย Google", orWord: "หรือ",
   },
   en: {
     brand: "SkillDee", search: "Search for courses...", login: "Log in", signup: "Sign up free",
@@ -99,6 +114,7 @@ const T = {
     footer: "SkillDee — prototype for demonstration", newUser: "New learner",
     navHome: "Home", navSearch: "Search", navLearn: "Learning", navCart: "Cart", navAccount: "Account",
     account: "My account", close: "Close",
+    googleBtn: "Continue with Google", orWord: "or",
   },
   zh: {
     brand: "SkillDee", search: "搜索课程...", login: "登录", signup: "免费注册",
@@ -131,6 +147,7 @@ const T = {
     footer: "SkillDee — 演示原型", newUser: "新学员",
     navHome: "首页", navSearch: "搜索", navLearn: "课程", navCart: "购物车", navAccount: "账户",
     account: "我的账户", close: "关闭",
+    googleBtn: "使用 Google 登录", orWord: "或",
   },
   ja: {
     brand: "SkillDee", search: "コースを検索...", login: "ログイン", signup: "無料登録",
@@ -163,6 +180,7 @@ const T = {
     footer: "SkillDee — デモ用プロトタイプ", newUser: "新しい受講者",
     navHome: "ホーム", navSearch: "検索", navLearn: "学習", navCart: "カート", navAccount: "アカウント",
     account: "アカウント", close: "閉じる",
+    googleBtn: "Google でログイン", orWord: "または",
   },
 };
 
@@ -383,6 +401,16 @@ const COURSES = [
 ];
 
 // ---------- ส่วนประกอบย่อย ----------
+function GoogleG() {
+  return (
+    <svg viewBox="0 0 48 48" className="w-5 h-5" aria-hidden="true">
+      <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.2 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.7-.4-3.9z"/>
+      <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.2 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
+      <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.3 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/>
+      <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4.1 5.5l6.2 5.2C41 35.4 44 30.2 44 24c0-1.3-.1-2.7-.4-3.9z"/>
+    </svg>
+  );
+}
 function Stars({ rating }) {
   const full = Math.floor(rating);
   const half = rating - full >= 0.5;
@@ -423,6 +451,46 @@ function App() {
   const catName = (id) => { const c = CATEGORIES.find(x => x.id === id); return c ? c[lang] : id; };
 
   const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(""), 2200); };
+
+  // ติดตามสถานะล็อกอิน Google (คงอยู่แม้รีเฟรชหน้า)
+  useEffect(() => {
+    getRedirectResult(auth).catch(() => {});
+    const unsub = onAuthStateChanged(auth, (u) => {
+      if (u) {
+        setUser({
+          name: u.displayName || (u.email ? u.email.split("@")[0] : "User"),
+          email: u.email || "",
+          photo: u.photoURL || null,
+          google: true,
+        });
+      } else {
+        setUser(prev => (prev && prev.google ? null : prev));
+      }
+    });
+    return unsub;
+  }, []);
+
+  const googleLogin = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+      setAuthOpen(false); setAccountOpen(false);
+      showToast(t.toastLogin);
+    } catch (err) {
+      if (err && (err.code === "auth/popup-blocked" || err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request")) {
+        if (err.code === "auth/popup-blocked") {
+          try { await signInWithRedirect(auth, provider); } catch (e) {}
+        }
+      } else {
+        showToast("Google login: " + (err && err.code ? err.code : "error"));
+      }
+    }
+  };
+
+  const handleLogout = () => {
+    signOut(auth).catch(() => {});
+    setUser(null); setPage("home");
+  };
 
   const filtered = useMemo(() => COURSES.filter(c => {
     const hay = (c.title.th + c.title.en + c.instructor.th + c.instructor.en + catName(c.cat)).toLowerCase();
@@ -549,8 +617,8 @@ function App() {
         </button>
         {user ? (
           <button onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); setLangOpen(false); }}
-            className="w-8 h-8 rounded-full bg-zinc-900 text-white text-sm font-bold hidden sm:flex items-center justify-center shrink-0">
-            {user.name[0].toUpperCase()}
+            className="w-8 h-8 rounded-full bg-zinc-900 text-white text-sm font-bold hidden sm:flex items-center justify-center shrink-0 overflow-hidden">
+            {user.photo ? <img src={user.photo} alt="" className="w-8 h-8 object-cover" referrerPolicy="no-referrer" /> : user.name[0].toUpperCase()}
           </button>
         ) : (
           <div className="hidden sm:flex gap-1.5 shrink-0">
@@ -579,7 +647,7 @@ function App() {
             <p className="text-xs text-zinc-500 truncate">{user.email}</p>
           </div>
           <button onClick={() => { setPage("mylearning"); setMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm hover:bg-zinc-50">{t.myCourses}</button>
-          <button onClick={() => { setUser(null); setMenuOpen(false); setPage("home"); }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-zinc-50">{t.logout}</button>
+          <button onClick={() => { handleLogout(); setMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-zinc-50">{t.logout}</button>
         </div>
       )}
     </header>
@@ -917,6 +985,14 @@ function App() {
         <button onClick={() => setAuthOpen(false)} className="absolute top-3 right-3 p-1 text-zinc-400 hover:text-zinc-900" aria-label="close"><X className="w-5 h-5" /></button>
         <h2 className="text-xl font-extrabold">{authMode === "login" ? t.loginTitle : t.signupTitle}</h2>
         <p className="text-sm text-zinc-500 mt-1">{t.authNote}</p>
+        <button onClick={googleLogin} className="w-full border border-zinc-300 rounded-lg py-3 font-bold flex items-center justify-center gap-2 hover:bg-zinc-50 mt-4">
+          <GoogleG /> {t.googleBtn}
+        </button>
+        <div className="flex items-center gap-3 mt-4">
+          <div className="flex-1 h-px bg-zinc-200" />
+          <span className="text-xs text-zinc-400">{t.orWord}</span>
+          <div className="flex-1 h-px bg-zinc-200" />
+        </div>
         <div className="mt-4 space-y-3">
           {authMode === "signup" && (
             <input value={authName} onChange={e => setAuthName(e.target.value)} placeholder={t.yourName}
@@ -976,18 +1052,21 @@ function App() {
         {user ? (
           <>
             <div className="flex items-center gap-3 pb-4 border-b border-zinc-100">
-              <div className="w-11 h-11 rounded-full bg-zinc-900 text-white font-bold flex items-center justify-center text-lg">{user.name[0].toUpperCase()}</div>
+              <div className="w-11 h-11 rounded-full bg-zinc-900 text-white font-bold flex items-center justify-center text-lg overflow-hidden">
+                {user.photo ? <img src={user.photo} alt="" className="w-11 h-11 object-cover" referrerPolicy="no-referrer" /> : user.name[0].toUpperCase()}
+              </div>
               <div className="min-w-0">
                 <p className="font-bold">{user.name}</p>
                 <p className="text-sm text-zinc-500 truncate">{user.email}</p>
               </div>
             </div>
             <button onClick={() => { setPage("mylearning"); setAccountOpen(false); }} className="w-full text-left py-3.5 font-bold border-b border-zinc-100">{t.myCourses}</button>
-            <button onClick={() => { setUser(null); setAccountOpen(false); setPage("home"); }} className="w-full text-left py-3.5 font-bold text-red-600">{t.logout}</button>
+            <button onClick={() => { handleLogout(); setAccountOpen(false); }} className="w-full text-left py-3.5 font-bold text-red-600">{t.logout}</button>
           </>
         ) : (
           <>
             <h2 className="font-extrabold text-lg mb-4">{t.account}</h2>
+            <button onClick={googleLogin} className="w-full border border-zinc-300 font-bold py-3.5 rounded-lg flex items-center justify-center gap-2 mb-2"><GoogleG /> {t.googleBtn}</button>
             <button onClick={() => { setAuthMode("login"); setAuthOpen(true); setAccountOpen(false); }} className="w-full bg-violet-700 text-white font-bold py-3.5 rounded-lg">{t.login}</button>
             <button onClick={() => { setAuthMode("signup"); setAuthOpen(true); setAccountOpen(false); }} className="w-full border border-zinc-900 font-bold py-3.5 rounded-lg mt-2">{t.signup}</button>
           </>
