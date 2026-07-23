@@ -1,302 +1,1700 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>สกิลดี — ค้นหาการ์ดวันพีช (Prototype)</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Pirata+One&family=Kanit:wght@300;400;500;600;700&family=Chakra+Petch:wght@400;600&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --sea:#0B1D33;
-    --sea-2:#12283F;
-    --parchment:#E9DCC3;
-    --parchment-2:#DECBA4;
-    --ink:#2A2118;
-    --gold:#C9A227;
-    --seal:#B3402A;
-  }
-  *{box-sizing:border-box;margin:0;padding:0}
-  body{
-    font-family:'Kanit',sans-serif;
-    background:
-      radial-gradient(1200px 600px at 50% -200px, #1A3A5C 0%, transparent 60%),
-      var(--sea);
-    color:var(--parchment);
-    min-height:100vh;
-  }
-
-  /* ---------- Header ---------- */
-  header{
-    text-align:center;
-    padding:34px 16px 10px;
-  }
-  .brand{
-    font-size:13px;letter-spacing:.35em;color:var(--gold);
-    text-transform:uppercase;font-weight:600;
-  }
-  h1{
-    font-family:'Pirata One',cursive;
-    font-size:clamp(40px,8vw,64px);
-    color:var(--parchment);
-    line-height:1.05;
-    text-shadow:0 3px 0 rgba(0,0,0,.35);
-  }
-  h1 .th{
-    display:block;font-family:'Kanit',sans-serif;
-    font-size:clamp(15px,3vw,18px);font-weight:400;
-    color:#9FB3C8;letter-spacing:.05em;margin-top:6px;
-  }
-
-  /* ---------- Search bar ---------- */
-  .search-wrap{
-    max-width:680px;margin:22px auto 0;padding:0 16px;
-  }
-  .search-bar{
-    display:flex;gap:0;
-    border:2px solid var(--gold);
-    border-radius:10px;overflow:hidden;
-    background:var(--sea-2);
-    box-shadow:0 6px 24px rgba(0,0,0,.4);
-  }
-  .search-bar input{
-    flex:1;min-width:0;
-    background:transparent;border:0;outline:0;
-    color:var(--parchment);
-    font-family:'Kanit',sans-serif;font-size:17px;
-    padding:14px 16px;
-  }
-  .search-bar input::placeholder{color:#6C8296}
-  .search-bar button{
-    background:var(--gold);border:0;cursor:pointer;
-    font-family:'Kanit',sans-serif;font-weight:600;font-size:16px;
-    color:var(--ink);padding:0 22px;
-    transition:filter .15s;
-  }
-  .search-bar button:hover{filter:brightness(1.1)}
-  .search-bar button:focus-visible,
-  .search-bar input:focus-visible{outline:3px solid #fff;outline-offset:-3px}
-  .hint{
-    text-align:center;font-size:13px;color:#7E93A8;margin-top:10px;
-  }
-
-  /* ---------- Status ---------- */
-  .status{
-    text-align:center;padding:40px 16px;color:#9FB3C8;font-size:16px;
-  }
-  .status.error{color:#E8A79A}
-  .compass{
-    width:44px;height:44px;margin:0 auto 14px;
-    border:3px solid var(--gold);border-radius:50%;
-    border-top-color:transparent;
-    animation:spin 1s linear infinite;
-  }
-  @keyframes spin{to{transform:rotate(360deg)}}
-  @media (prefers-reduced-motion:reduce){.compass{animation:none}}
-
-  /* ---------- Results grid ---------- */
-  .grid{
-    max-width:1100px;margin:28px auto;padding:0 16px 20px;
-    display:grid;
-    grid-template-columns:repeat(auto-fill,minmax(210px,1fr));
-    gap:18px;
-  }
-
-  /* ---------- Wanted-poster card ---------- */
-  .card{
-    background:
-      linear-gradient(160deg,var(--parchment) 0%,var(--parchment-2) 100%);
-    color:var(--ink);
-    border-radius:6px;
-    padding:10px 10px 12px;
-    border:1px solid #B49F72;
-    outline:4px double #8A7448;
-    outline-offset:-8px;
-    box-shadow:0 8px 18px rgba(0,0,0,.45);
-    display:flex;flex-direction:column;
-    transition:transform .15s;
-  }
-  .card:hover{transform:translateY(-4px)}
-  .card .wanted{
-    font-family:'Pirata One',cursive;
-    text-align:center;font-size:15px;letter-spacing:.25em;
-    color:#8A7448;margin-bottom:6px;
-  }
-  .card img{
-    width:100%;border-radius:4px;display:block;
-    background:#C9B893;min-height:120px;
-  }
-  .card .name{
-    font-weight:600;font-size:16px;margin:10px 2px 2px;
-    line-height:1.25;
-  }
-  .card .meta{
-    font-family:'Chakra Petch',monospace;
-    font-size:12.5px;color:#5A4B34;margin:0 2px;
-  }
-  .card .foot{
-    display:flex;justify-content:space-between;align-items:center;
-    margin-top:auto;padding-top:10px;
-  }
-  .stamp{
-    font-family:'Chakra Petch',monospace;font-weight:600;
-    font-size:12px;letter-spacing:.08em;
-    color:var(--seal);
-    border:2px solid var(--seal);border-radius:4px;
-    padding:2px 8px;transform:rotate(-3deg);
-    background:rgba(179,64,42,.06);
-  }
-  .power{
-    font-family:'Chakra Petch',monospace;font-size:13px;font-weight:600;
-    color:var(--ink);
-  }
-
-  /* ---------- Pager ---------- */
-  .pager{
-    display:flex;justify-content:center;align-items:center;gap:16px;
-    padding:6px 16px 40px;
-  }
-  .pager[hidden]{display:none}
-  .pager button{
-    background:transparent;border:2px solid var(--gold);
-    color:var(--gold);border-radius:8px;
-    font-family:'Kanit',sans-serif;font-weight:500;font-size:15px;
-    padding:8px 18px;cursor:pointer;transition:background .15s,color .15s;
-  }
-  .pager button:hover:not(:disabled){background:var(--gold);color:var(--ink)}
-  .pager button:disabled{opacity:.3;cursor:default}
-  .pager .page-label{font-size:14px;color:#9FB3C8}
-
-  footer{
-    text-align:center;font-size:12px;color:#5F7488;
-    padding:0 16px 30px;line-height:1.7;
-  }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>สกิลดี — เรียนออนไลน์กับผู้เชี่ยวชาญ</title>
+  <meta name="description" content="แพลตฟอร์มคอร์สเรียนออนไลน์ เรียนได้ทุกที่ ทุกเวลา" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;700;800;900&family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    body { font-family: 'Noto Sans Thai', 'Noto Sans SC', 'Noto Sans JP', system-ui, sans-serif; margin: 0; }
+    #loading { display: flex; min-height: 100vh; align-items: center; justify-content: center; color: #71717a; font-weight: bold; }
+  </style>
+  <script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
 </head>
 <body>
+  <div id="root"><div id="loading">กำลังโหลด สกิลดี...</div></div>
+  <script type="text/babel" data-type="module">
+import React, { useState, useMemo, useEffect } from "https://esm.sh/react@18.3.1";
+import { createRoot } from "https://esm.sh/react-dom@18.3.1/client";
+import {
+  Search, ShoppingCart, Star, StarHalf, Play, ChevronDown, ChevronUp,
+  Clock, Users, Globe, Award, CheckCircle2, Circle, X, ArrowLeft,
+  PlayCircle, FileText, BadgeCheck, Trash2, Languages, Home as HomeIcon, UserCircle,
+  CreditCard, QrCode, Lock, Loader2
+} from "https://esm.sh/lucide-react@0.383.0?deps=react@18.3.1";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-<header>
-  <div class="brand">SkillDee · Prototype</div>
-  <h1>Grand Line Search
-    <span class="th">ค้นหาการ์ดวันพีช — ฐานข้อมูลจาก API TCG</span>
-  </h1>
-</header>
+// ---------- Firebase (ระบบสมาชิกจริงผ่าน Google) ----------
+const firebaseConfig = {
+  apiKey: "AIzaSyDyVlh5j9TR3YrqxLcoEUAIJXiewGwMiYY",
+  authDomain: "skilldee.firebaseapp.com",
+  projectId: "skilldee",
+  storageBucket: "skilldee.firebasestorage.app",
+  messagingSenderId: "265655135216",
+  appId: "1:265655135216:web:4a708ca6c77ae8909c0b35",
+};
+const fbApp = initializeApp(firebaseConfig);
+const auth = getAuth(fbApp);
 
-<div class="search-wrap">
-  <div class="search-bar">
-    <input id="q" type="text" placeholder="พิมพ์ชื่อการ์ด เช่น luffy, zoro, nami…" autocomplete="off">
-    <button id="go">ค้นหา</button>
-  </div>
-  <div class="hint">ค้นหาด้วยชื่อภาษาอังกฤษ (ฐานข้อมูลอิงเวอร์ชัน EN)</div>
-</div>
+// ---------- ระบบหลายภาษา (i18n) ----------
+const LANG_LIST = [
+  { code: "th", label: "ไทย" },
+  { code: "en", label: "English" },
+  { code: "zh", label: "中文" },
+  { code: "ja", label: "日本語" },
+];
 
-<div id="out"></div>
-<div class="pager" id="pager" hidden>
-  <button id="prev">← ก่อนหน้า</button>
-  <span class="page-label" id="pageLabel"></span>
-  <button id="next">ถัดไป →</button>
-</div>
+const LOCALES = { th: "th-TH", en: "en-US", zh: "zh-CN", ja: "ja-JP" };
 
-<footer>
-  ข้อมูลการ์ดจาก apitcg.com (โปรเจกต์ชุมชน ไม่ใช่ผลิตภัณฑ์ทางการของ Bandai)<br>
-  ⚠︎ หน้านี้ฝัง API key ไว้ฝั่ง client เพื่อทดสอบเท่านั้น — เวอร์ชันจริงต้องเรียกผ่าน backend
-</footer>
+const T = {
+  th: {
+    brand: "สกิลดี", search: "ค้นหาคอร์สเรียน...", login: "เข้าสู่ระบบ", signup: "สมัครฟรี",
+    myCourses: "คอร์สของฉัน", logout: "ออกจากระบบ",
+    heroTag: "แพลตฟอร์มเรียนออนไลน์", heroTitle1: "เก่งขึ้นทุกวัน", heroTitle2: "ด้วยคอร์สจากผู้เชี่ยวชาญตัวจริง",
+    heroSub: "เลือกเรียนจากคอร์สคุณภาพหลากหลายหมวด เรียนได้ทุกที่ ทุกเวลา เป็นเจ้าของคอร์สตลอดชีพ",
+    statStudents: "ผู้เรียน 240,000+ คน", statCert: "ใบประกาศเมื่อเรียนจบ", statDevices: "เรียนได้ทุกอุปกรณ์",
+    recommended: "คอร์สแนะนำ", catCourses: "คอร์สหมวด", searchFor: "ผลการค้นหา", coursesUnit: "คอร์ส",
+    noCourse: "ไม่พบคอร์สที่ค้นหา", noCourseSub: "ลองใช้คำค้นอื่น หรือเลือกดูจากหมวดหมู่ด้านบน",
+    bestseller: "ขายดี", reviewsUnit: "รีวิว", studentsUnit: "ผู้เรียน", taughtBy: "สอนโดย", back: "กลับหน้าหลัก",
+    whatLearn: "สิ่งที่คุณจะได้เรียนรู้", courseContent: "เนื้อหาคอร์ส", chaptersUnit: "บท",
+    lecturesUnit: "บทเรียน", hoursUnit: "ชั่วโมง", minUnit: "นาที", minShort: "น.",
+    own: "คุณเป็นเจ้าของคอร์สนี้แล้ว", continueLearn: "เข้าเรียนต่อ", addCart: "เพิ่มลงตะกร้า", goCart: "ไปที่ตะกร้า",
+    tryDemo: "ทดลองเรียนทันที (เดโม)", discountTag: "ลด", lifetime: "เรียนได้ตลอดชีพ ทุกอุปกรณ์",
+    cert: "ใบประกาศเมื่อเรียนจบ", video: "วิดีโอ", levelLabel: "ระดับ",
+    levels: { beginner: "เริ่มต้น", intermediate: "ปานกลาง", all: "ทุกระดับ" },
+    cartTitle: "ตะกร้าสินค้า", inCartUnit: "คอร์สในตะกร้า", emptyCart: "ตะกร้าของคุณยังว่าง",
+    browse: "เลือกดูคอร์สเรียน", remove: "ลบออก", normalPrice: "ราคาปกติ", discountLabel: "ส่วนลด",
+    total: "ยอดรวม", payDemo: "ชำระเงิน (เดโม)", loginToPay: "เข้าสู่ระบบเพื่อชำระเงิน",
+    demoNote: "นี่คือระบบจำลอง — ไม่มีการชำระเงินจริง",
+    noEnrolled: "คุณยังไม่มีคอร์สเรียน", noEnrolledSub: "เลือกซื้อหรือทดลองเรียนคอร์สที่สนใจได้เลย",
+    findCourse: "ค้นหาคอร์ส", start: "เริ่มเรียน", finishedAll: "เรียนจบแล้ว 🎉", learned: "เรียนไปแล้ว",
+    progressLabel: "ความคืบหน้า", markDone: "ทำเครื่องหมายว่าจบ", doneMark: "เรียนจบแล้ว ✓",
+    prev: "← บทก่อนหน้า", next: "บทถัดไป →", mockVideo: "วิดีโอจำลอง", chapterN: "บทที่",
+    loginTitle: "เข้าสู่ระบบ", signupTitle: "สมัครสมาชิกฟรี",
+    authNote: "ระบบจำลอง — กรอกอีเมลอะไรก็ได้เพื่อทดลอง", yourName: "ชื่อของคุณ", email: "อีเมล", password: "รหัสผ่าน",
+    doLogin: "เข้าสู่ระบบ", doSignup: "สมัครสมาชิก", noAccount: "ยังไม่มีบัญชี? ", haveAccount: "มีบัญชีอยู่แล้ว? ",
+    toastCart: "เพิ่มลงตะกร้าแล้ว", toastPay: "ชำระเงินสำเร็จ! เริ่มเรียนได้เลย",
+    toastLogin: "เข้าสู่ระบบแล้ว", toastSignup: "สมัครสมาชิกสำเร็จ",
+    footer: "สกิลดี — ต้นแบบเพื่อการสาธิต", newUser: "ผู้เรียนใหม่",
+    navHome: "หน้าแรก", navSearch: "ค้นหา", navLearn: "ของฉัน", navCart: "ตะกร้า", navAccount: "บัญชี",
+    account: "บัญชีของฉัน", close: "ปิด",
+    googleBtn: "เข้าสู่ระบบด้วย Google", orWord: "หรือ",
+    payTitle: "ชำระเงิน", payMethodLabel: "เลือกวิธีชำระเงิน", cardMethod: "บัตรเครดิต/เดบิต",
+    promptpay: "พร้อมเพย์ (QR)", cardNumber: "หมายเลขบัตร", cardName: "ชื่อบนบัตร",
+    expiry: "หมดอายุ (ดด/ปป)", cvvLabel: "CVV", useTestCard: "กรอกบัตรทดสอบให้ฉัน",
+    payNow: "ชำระเงินตอนนี้", processing: "กำลังดำเนินการ...",
+    demoPayNote: "โหมดทดสอบ — ไม่มีการตัดเงินจริง ห้ามกรอกเลขบัตรจริงของคุณ",
+    orderSummary: "สรุปคำสั่งซื้อ", paySuccess: "ชำระเงินสำเร็จ!",
+    paySuccessSub: "คอร์สถูกเพิ่มใน \"คอร์สของฉัน\" เรียบร้อยแล้ว", goLearn: "ไปที่คอร์สของฉัน",
+    scanQr: "สแกน QR ด้วยแอปธนาคาร (จำลอง)", confirmPaid: "ยืนยันการชำระเงิน (จำลอง)",
+    invalidCard: "กรุณากรอกข้อมูลบัตรให้ครบถ้วน", backToCart: "กลับไปตะกร้า", secureNote: "การเชื่อมต่อจำลองความปลอดภัย",
+  },
+  en: {
+    brand: "SkillDee", search: "Search for courses...", login: "Log in", signup: "Sign up free",
+    myCourses: "My learning", logout: "Log out",
+    heroTag: "ONLINE LEARNING PLATFORM", heroTitle1: "Get better every day", heroTitle2: "with courses from real experts",
+    heroSub: "Choose from quality courses across many categories. Learn anywhere, anytime — yours for life.",
+    statStudents: "240,000+ learners", statCert: "Certificate on completion", statDevices: "Learn on any device",
+    recommended: "Recommended courses", catCourses: "Courses in ", searchFor: "Results for", coursesUnit: "courses",
+    noCourse: "No courses found", noCourseSub: "Try a different keyword or browse the categories above.",
+    bestseller: "Bestseller", reviewsUnit: "reviews", studentsUnit: "learners", taughtBy: "Taught by", back: "Back to home",
+    whatLearn: "What you'll learn", courseContent: "Course content", chaptersUnit: "sections",
+    lecturesUnit: "lectures", hoursUnit: "hours", minUnit: "min", minShort: "min",
+    own: "You own this course", continueLearn: "Continue learning", addCart: "Add to cart", goCart: "Go to cart",
+    tryDemo: "Try it now (demo)", discountTag: "off", lifetime: "Full lifetime access on all devices",
+    cert: "Certificate of completion", video: "video", levelLabel: "Level: ",
+    levels: { beginner: "Beginner", intermediate: "Intermediate", all: "All levels" },
+    cartTitle: "Shopping cart", inCartUnit: "courses in cart", emptyCart: "Your cart is empty",
+    browse: "Browse courses", remove: "Remove", normalPrice: "Original price", discountLabel: "Discount",
+    total: "Total", payDemo: "Checkout (demo)", loginToPay: "Log in to checkout",
+    demoNote: "This is a demo — no real payment is made.",
+    noEnrolled: "You have no courses yet", noEnrolledSub: "Buy or try a course you're interested in.",
+    findCourse: "Find courses", start: "Start learning", finishedAll: "Completed 🎉", learned: "Progress",
+    progressLabel: "Progress", markDone: "Mark as complete", doneMark: "Completed ✓",
+    prev: "← Previous", next: "Next →", mockVideo: "Mock video", chapterN: "Section",
+    loginTitle: "Log in", signupTitle: "Sign up free",
+    authNote: "Demo system — enter any email to try it.", yourName: "Your name", email: "Email", password: "Password",
+    doLogin: "Log in", doSignup: "Sign up", noAccount: "No account yet? ", haveAccount: "Already have an account? ",
+    toastCart: "Added to cart", toastPay: "Payment successful! Start learning now",
+    toastLogin: "Logged in", toastSignup: "Account created",
+    footer: "SkillDee — prototype for demonstration", newUser: "New learner",
+    navHome: "Home", navSearch: "Search", navLearn: "Learning", navCart: "Cart", navAccount: "Account",
+    account: "My account", close: "Close",
+    googleBtn: "Continue with Google", orWord: "or",
+    payTitle: "Checkout", payMethodLabel: "Payment method", cardMethod: "Credit/Debit card",
+    promptpay: "PromptPay (QR)", cardNumber: "Card number", cardName: "Name on card",
+    expiry: "Expiry (MM/YY)", cvvLabel: "CVV", useTestCard: "Fill test card for me",
+    payNow: "Pay now", processing: "Processing...",
+    demoPayNote: "Test mode — no real charges. Do not enter a real card number.",
+    orderSummary: "Order summary", paySuccess: "Payment successful!",
+    paySuccessSub: "Courses have been added to My learning.", goLearn: "Go to My learning",
+    scanQr: "Scan QR with your banking app (demo)", confirmPaid: "Confirm payment (demo)",
+    invalidCard: "Please complete your card details", backToCart: "Back to cart", secureNote: "Simulated secure connection",
+  },
+  zh: {
+    brand: "SkillDee", search: "搜索课程...", login: "登录", signup: "免费注册",
+    myCourses: "我的课程", logout: "退出登录",
+    heroTag: "在线学习平台", heroTitle1: "每天进步一点", heroTitle2: "跟随真正的专家学习",
+    heroSub: "从多个类别的优质课程中选择，随时随地学习，终身拥有。",
+    statStudents: "240,000+ 学员", statCert: "结业证书", statDevices: "任何设备均可学习",
+    recommended: "推荐课程", catCourses: "分类：", searchFor: "搜索结果：", coursesUnit: "门课程",
+    noCourse: "未找到相关课程", noCourseSub: "请尝试其他关键词，或浏览上方的分类。",
+    bestseller: "畅销", reviewsUnit: "条评价", studentsUnit: "学员", taughtBy: "讲师：", back: "返回首页",
+    whatLearn: "你将学到", courseContent: "课程内容", chaptersUnit: "章节",
+    lecturesUnit: "节课", hoursUnit: "小时", minUnit: "分钟", minShort: "分",
+    own: "你已拥有此课程", continueLearn: "继续学习", addCart: "加入购物车", goCart: "前往购物车",
+    tryDemo: "立即试学（演示）", discountTag: "折扣", lifetime: "终身访问，支持所有设备",
+    cert: "结业证书", video: "视频", levelLabel: "级别：",
+    levels: { beginner: "入门", intermediate: "中级", all: "所有级别" },
+    cartTitle: "购物车", inCartUnit: "门课程", emptyCart: "购物车是空的",
+    browse: "浏览课程", remove: "移除", normalPrice: "原价", discountLabel: "折扣",
+    total: "总计", payDemo: "结算（演示）", loginToPay: "登录以结算",
+    demoNote: "这是演示系统 — 不会进行真实支付。",
+    noEnrolled: "你还没有课程", noEnrolledSub: "购买或试学感兴趣的课程吧。",
+    findCourse: "查找课程", start: "开始学习", finishedAll: "已完成 🎉", learned: "已学习",
+    progressLabel: "学习进度", markDone: "标记为完成", doneMark: "已完成 ✓",
+    prev: "← 上一节", next: "下一节 →", mockVideo: "模拟视频", chapterN: "第",
+    loginTitle: "登录", signupTitle: "免费注册",
+    authNote: "演示系统 — 输入任意邮箱即可体验。", yourName: "你的名字", email: "邮箱", password: "密码",
+    doLogin: "登录", doSignup: "注册", noAccount: "还没有账号？", haveAccount: "已有账号？",
+    toastCart: "已加入购物车", toastPay: "支付成功！开始学习吧",
+    toastLogin: "已登录", toastSignup: "注册成功",
+    footer: "SkillDee — 演示原型", newUser: "新学员",
+    navHome: "首页", navSearch: "搜索", navLearn: "课程", navCart: "购物车", navAccount: "账户",
+    account: "我的账户", close: "关闭",
+    googleBtn: "使用 Google 登录", orWord: "或",
+    payTitle: "结算", payMethodLabel: "支付方式", cardMethod: "信用卡/借记卡",
+    promptpay: "PromptPay（二维码）", cardNumber: "卡号", cardName: "持卡人姓名",
+    expiry: "有效期（MM/YY）", cvvLabel: "CVV", useTestCard: "自动填入测试卡",
+    payNow: "立即支付", processing: "处理中...",
+    demoPayNote: "测试模式 — 不会真实扣款，请勿输入真实卡号。",
+    orderSummary: "订单摘要", paySuccess: "支付成功！",
+    paySuccessSub: "课程已添加到我的课程。", goLearn: "前往我的课程",
+    scanQr: "用银行App扫码（演示）", confirmPaid: "确认支付（演示）",
+    invalidCard: "请填写完整的卡片信息", backToCart: "返回购物车", secureNote: "模拟安全连接",
+  },
+  ja: {
+    brand: "SkillDee", search: "コースを検索...", login: "ログイン", signup: "無料登録",
+    myCourses: "マイコース", logout: "ログアウト",
+    heroTag: "オンライン学習プラットフォーム", heroTitle1: "毎日成長しよう", heroTitle2: "本物の専門家から学ぶ",
+    heroSub: "さまざまなカテゴリの高品質なコースから選べます。いつでもどこでも、一生使えます。",
+    statStudents: "受講者 240,000人以上", statCert: "修了証明書", statDevices: "あらゆるデバイスで学習",
+    recommended: "おすすめコース", catCourses: "カテゴリ：", searchFor: "検索結果：", coursesUnit: "件のコース",
+    noCourse: "コースが見つかりません", noCourseSub: "別のキーワードを試すか、上のカテゴリからお選びください。",
+    bestseller: "ベストセラー", reviewsUnit: "件のレビュー", studentsUnit: "人の受講者", taughtBy: "講師：", back: "ホームに戻る",
+    whatLearn: "学習内容", courseContent: "コース内容", chaptersUnit: "セクション",
+    lecturesUnit: "レクチャー", hoursUnit: "時間", minUnit: "分", minShort: "分",
+    own: "このコースを所有しています", continueLearn: "学習を続ける", addCart: "カートに追加", goCart: "カートへ",
+    tryDemo: "今すぐ試す（デモ）", discountTag: "OFF", lifetime: "全デバイスで無期限アクセス",
+    cert: "修了証明書", video: "動画", levelLabel: "レベル：",
+    levels: { beginner: "初級", intermediate: "中級", all: "全レベル" },
+    cartTitle: "ショッピングカート", inCartUnit: "件のコース", emptyCart: "カートは空です",
+    browse: "コースを見る", remove: "削除", normalPrice: "通常価格", discountLabel: "割引",
+    total: "合計", payDemo: "購入する（デモ）", loginToPay: "ログインして購入",
+    demoNote: "これはデモです — 実際の支払いは発生しません。",
+    noEnrolled: "コースがまだありません", noEnrolledSub: "気になるコースを購入または試してみましょう。",
+    findCourse: "コースを探す", start: "学習を始める", finishedAll: "完了 🎉", learned: "進捗",
+    progressLabel: "進捗状況", markDone: "完了にする", doneMark: "完了 ✓",
+    prev: "← 前へ", next: "次へ →", mockVideo: "モック動画", chapterN: "セクション",
+    loginTitle: "ログイン", signupTitle: "無料登録",
+    authNote: "デモシステム — 任意のメールアドレスでお試しください。", yourName: "お名前", email: "メールアドレス", password: "パスワード",
+    doLogin: "ログイン", doSignup: "登録する", noAccount: "アカウントをお持ちでない方 ", haveAccount: "アカウントをお持ちの方 ",
+    toastCart: "カートに追加しました", toastPay: "支払い完了！学習を始めましょう",
+    toastLogin: "ログインしました", toastSignup: "登録が完了しました",
+    footer: "SkillDee — デモ用プロトタイプ", newUser: "新しい受講者",
+    navHome: "ホーム", navSearch: "検索", navLearn: "学習", navCart: "カート", navAccount: "アカウント",
+    account: "アカウント", close: "閉じる",
+    googleBtn: "Google でログイン", orWord: "または",
+    payTitle: "お支払い", payMethodLabel: "お支払い方法", cardMethod: "クレジット/デビットカード",
+    promptpay: "PromptPay（QR）", cardNumber: "カード番号", cardName: "カード名義",
+    expiry: "有効期限（MM/YY）", cvvLabel: "CVV", useTestCard: "テストカードを自動入力",
+    payNow: "支払う", processing: "処理中...",
+    demoPayNote: "テストモード — 実際の請求はありません。実在のカード番号は入力しないでください。",
+    orderSummary: "ご注文内容", paySuccess: "お支払い完了！",
+    paySuccessSub: "コースがマイコースに追加されました。", goLearn: "マイコースへ",
+    scanQr: "銀行アプリでQRをスキャン（デモ）", confirmPaid: "支払いを確認（デモ）",
+    invalidCard: "カード情報をすべて入力してください", backToCart: "カートに戻る", secureNote: "セキュア接続（デモ）",
+  },
+};
 
-<script>
-const API_KEY = '40d47b3263b98d5196544e711de9cf0bd3be7e6ebcce96ff2f6362b3247a73b9';
-const BASE = 'https://apitcg.com/api/one-piece/cards';
+const CATEGORIES = [
+  { id: "all", th: "ทั้งหมด", en: "All", zh: "全部", ja: "すべて" },
+  { id: "ai", th: "AI", en: "AI", zh: "AI", ja: "AI" },
+  { id: "dev", th: "เขียนโปรแกรม", en: "Programming", zh: "编程", ja: "プログラミング" },
+  { id: "biz", th: "ธุรกิจ", en: "Business", zh: "商业", ja: "ビジネス" },
+  { id: "design", th: "ออกแบบ", en: "Design", zh: "设计", ja: "デザイン" },
+  { id: "mkt", th: "การตลาด", en: "Marketing", zh: "营销", ja: "マーケティング" },
+  { id: "lang", th: "ภาษา", en: "Languages", zh: "语言", ja: "語学" },
+  { id: "fin", th: "การเงิน", en: "Finance", zh: "金融", ja: "ファイナンス" },
+];
 
-const out = document.getElementById('out');
-const pager = document.getElementById('pager');
-const pageLabel = document.getElementById('pageLabel');
-const prevBtn = document.getElementById('prev');
-const nextBtn = document.getElementById('next');
-const input = document.getElementById('q');
+// เนื้อหาคอร์สมี 2 ภาษา (th/en) — จีน/ญี่ปุ่นจะแสดงเนื้อหาคอร์สเป็นอังกฤษ (เหมือนเว็บจริงที่คอร์สมีภาษาจำกัด)
+const COURSES = [
+  {
+    id: 1, cat: "dev", instructor: { th: "อ.ธนพล วงศ์สุวรรณ", en: "Thanapol Wongsuwan" },
+    title: { th: "Python สำหรับผู้เริ่มต้น: จากศูนย์สู่มืออาชีพ", en: "Python for Beginners: Zero to Pro" },
+    desc: {
+      th: "เรียนรู้ Python ตั้งแต่พื้นฐานจนเขียนโปรเจกต์จริงได้ ครอบคลุมตัวแปร ฟังก์ชัน OOP ไปจนถึงการทำงานกับข้อมูล",
+      en: "Learn Python from the ground up to building real projects — variables, functions, OOP, and working with data.",
+    },
+    rating: 4.7, reviews: 12840, students: 58200, price: 399, oldPrice: 1990,
+    hours: 22, lectures: 185, level: "beginner", bestseller: true, color: "from-blue-600 to-cyan-500",
+    learn: {
+      th: ["เขียนโปรแกรม Python ได้อย่างมั่นใจ", "เข้าใจ OOP และโครงสร้างข้อมูล", "สร้างโปรเจกต์จริง 5 โปรเจกต์", "พื้นฐานสู่สาย Data Science"],
+      en: ["Write Python programs with confidence", "Understand OOP and data structures", "Build 5 real-world projects", "A foundation for Data Science"],
+    },
+    sections: [
+      { title: { th: "แนะนำคอร์สและติดตั้งเครื่องมือ", en: "Introduction & Setup" },
+        lectures: [
+          { t: { th: "ยินดีต้อนรับสู่คอร์ส", en: "Welcome to the course" }, m: 5 },
+          { t: { th: "ติดตั้ง Python และ VS Code", en: "Install Python & VS Code" }, m: 12 },
+          { t: { th: "รันโปรแกรมแรกของคุณ", en: "Run your first program" }, m: 8 }] },
+      { title: { th: "พื้นฐาน Python", en: "Python Basics" },
+        lectures: [
+          { t: { th: "ตัวแปรและชนิดข้อมูล", en: "Variables & data types" }, m: 15 },
+          { t: { th: "เงื่อนไข if-else", en: "if-else conditions" }, m: 18 },
+          { t: { th: "การวนลูป for และ while", en: "for & while loops" }, m: 20 },
+          { t: { th: "ฟังก์ชัน", en: "Functions" }, m: 22 }] },
+      { title: { th: "โครงสร้างข้อมูล", en: "Data Structures" },
+        lectures: [
+          { t: { th: "List และ Tuple", en: "Lists & Tuples" }, m: 17 },
+          { t: { th: "Dictionary และ Set", en: "Dictionaries & Sets" }, m: 19 },
+          { t: { th: "แบบฝึกหัดท้ายบท", en: "Practice exercises" }, m: 10 }] },
+    ],
+  },
+  {
+    id: 2, cat: "dev", instructor: { th: "อ.กมลชนก ศรีวิไล", en: "Kamonchanok Sriwilai" },
+    title: { th: "React + Tailwind สร้างเว็บแอปสมัยใหม่", en: "React + Tailwind: Modern Web Apps" },
+    desc: {
+      th: "สร้างเว็บแอปด้วย React ตั้งแต่ component พื้นฐานจนถึง state management และ deploy ขึ้นใช้งานจริง",
+      en: "Build web apps with React — from basic components to state management and production deployment.",
+    },
+    rating: 4.8, reviews: 8320, students: 31400, price: 449, oldPrice: 2290,
+    hours: 28, lectures: 210, level: "intermediate", bestseller: true, color: "from-sky-500 to-indigo-600",
+    learn: {
+      th: ["สร้าง SPA ด้วย React Hooks", "ออกแบบ UI สวยด้วย Tailwind", "จัดการ state อย่างมืออาชีพ", "Deploy ขึ้น production"],
+      en: ["Build SPAs with React Hooks", "Design beautiful UI with Tailwind", "Manage state like a pro", "Deploy to production"],
+    },
+    sections: [
+      { title: { th: "เริ่มต้นกับ React", en: "Getting Started with React" },
+        lectures: [
+          { t: { th: "React คืออะไร ทำไมต้องใช้", en: "What is React & why use it" }, m: 10 },
+          { t: { th: "สร้างโปรเจกต์แรก", en: "Create your first project" }, m: 14 },
+          { t: { th: "JSX และ Component", en: "JSX & Components" }, m: 16 }] },
+      { title: { th: "State และ Props", en: "State & Props" },
+        lectures: [
+          { t: { th: "useState เบื้องต้น", en: "useState basics" }, m: 18 },
+          { t: { th: "ส่งข้อมูลด้วย Props", en: "Passing data with Props" }, m: 15 },
+          { t: { th: "useEffect และ lifecycle", en: "useEffect & lifecycle" }, m: 21 }] },
+    ],
+  },
+  {
+    id: 3, cat: "mkt", instructor: { th: "อ.พิมพ์ลภัส จันทร์เพ็ญ", en: "Pimlapas Chanpen" },
+    title: { th: "การตลาดดิจิทัลฉบับจับมือทำ 2026", en: "Hands-on Digital Marketing 2026" },
+    desc: {
+      th: "วางกลยุทธ์การตลาดออนไลน์ครบวงจร ตั้งแต่ Social Media, SEO, โฆษณา ไปจนถึงการวัดผล",
+      en: "End-to-end online marketing strategy: social media, SEO, ads, and analytics.",
+    },
+    rating: 4.6, reviews: 5210, students: 19800, price: 349, oldPrice: 1590,
+    hours: 14, lectures: 96, level: "beginner", bestseller: false, color: "from-rose-500 to-orange-400",
+    learn: {
+      th: ["วางแผนคอนเทนต์ที่ขายได้จริง", "ยิงโฆษณา Facebook/Google", "ทำ SEO ให้เว็บติดหน้าแรก", "อ่านและวิเคราะห์ข้อมูลการตลาด"],
+      en: ["Plan content that converts", "Run Facebook/Google ads", "SEO to rank on page one", "Read & analyze marketing data"],
+    },
+    sections: [
+      { title: { th: "ภาพรวมการตลาดดิจิทัล", en: "Digital Marketing Overview" },
+        lectures: [
+          { t: { th: "Landscape การตลาดยุคใหม่", en: "The modern marketing landscape" }, m: 12 },
+          { t: { th: "รู้จักลูกค้าด้วย Persona", en: "Know your customer with Personas" }, m: 15 }] },
+      { title: { th: "Social Media Marketing", en: "Social Media Marketing" },
+        lectures: [
+          { t: { th: "วางแผนคอนเทนต์รายเดือน", en: "Monthly content planning" }, m: 20 },
+          { t: { th: "เทคนิคเพิ่ม Engagement", en: "Techniques to boost engagement" }, m: 18 }] },
+    ],
+  },
+  {
+    id: 4, cat: "biz", instructor: { th: "อ.วีรภัทร ตั้งใจดี", en: "Weeraphat Tangjaidee" },
+    title: { th: "Excel ขั้นเทพ: สูตร Pivot และ Dashboard", en: "Excel Mastery: Formulas, Pivots & Dashboards" },
+    desc: {
+      th: "ใช้ Excel ระดับมือโปร ทั้งสูตรขั้นสูง Pivot Table และการสร้าง Dashboard นำเสนอข้อมูล",
+      en: "Use Excel like a pro: advanced formulas, Pivot Tables, and data dashboards.",
+    },
+    rating: 4.7, reviews: 9640, students: 42100, price: 299, oldPrice: 1290,
+    hours: 12, lectures: 88, level: "all", bestseller: true, color: "from-emerald-500 to-teal-600",
+    learn: {
+      th: ["สูตร VLOOKUP, XLOOKUP, INDEX-MATCH", "สรุปข้อมูลด้วย Pivot Table", "สร้าง Dashboard แบบมืออาชีพ", "ทำงานเร็วขึ้น 10 เท่า"],
+      en: ["VLOOKUP, XLOOKUP, INDEX-MATCH", "Summarize data with Pivot Tables", "Build professional dashboards", "Work 10x faster"],
+    },
+    sections: [
+      { title: { th: "สูตรที่ต้องรู้", en: "Essential Formulas" },
+        lectures: [
+          { t: { th: "สูตรพื้นฐานที่ใช้บ่อย", en: "Everyday formulas" }, m: 14 },
+          { t: { th: "XLOOKUP ฉบับสมบูรณ์", en: "XLOOKUP complete guide" }, m: 19 }] },
+      { title: { th: "Pivot Table", en: "Pivot Tables" },
+        lectures: [
+          { t: { th: "สร้าง Pivot แรกของคุณ", en: "Your first Pivot" }, m: 16 },
+          { t: { th: "Pivot ขั้นสูง", en: "Advanced Pivots" }, m: 22 }] },
+    ],
+  },
+  {
+    id: 5, cat: "design", instructor: { th: "อ.ณิชา อารีวงศ์", en: "Nicha Areewong" },
+    title: { th: "UX/UI Design ด้วย Figma ครบจบในคอร์สเดียว", en: "Complete UX/UI Design with Figma" },
+    desc: {
+      th: "ออกแบบแอปและเว็บไซต์อย่างมืออาชีพด้วย Figma พร้อมหลักการ UX ที่ใช้ได้จริง",
+      en: "Design apps and websites professionally with Figma, plus practical UX principles.",
+    },
+    rating: 4.8, reviews: 6870, students: 24600, price: 429, oldPrice: 1990,
+    hours: 18, lectures: 140, level: "beginner", bestseller: false, color: "from-fuchsia-500 to-purple-600",
+    learn: {
+      th: ["ใช้ Figma ได้คล่องทุกเครื่องมือ", "หลักการ UX Research", "ออกแบบ Design System", "สร้าง Prototype แบบ interactive"],
+      en: ["Master every Figma tool", "UX Research principles", "Design a Design System", "Build interactive prototypes"],
+    },
+    sections: [
+      { title: { th: "รู้จัก Figma", en: "Meet Figma" },
+        lectures: [
+          { t: { th: "ทัวร์หน้าจอ Figma", en: "Figma interface tour" }, m: 11 },
+          { t: { th: "เครื่องมือพื้นฐาน", en: "Core tools" }, m: 16 }] },
+      { title: { th: "หลักการ UX", en: "UX Principles" },
+        lectures: [
+          { t: { th: "Design Thinking", en: "Design Thinking" }, m: 18 },
+          { t: { th: "ทำ User Research", en: "Doing user research" }, m: 20 }] },
+    ],
+  },
+  {
+    id: 6, cat: "lang", instructor: { th: "T.Sarah Mitchell", en: "Sarah Mitchell" },
+    title: { th: "ภาษาอังกฤษเพื่อการทำงาน พูดได้ใน 30 วัน", en: "Business English: Speak in 30 Days" },
+    desc: {
+      th: "ฝึกพูดภาษาอังกฤษในสถานการณ์ทำงานจริง ประชุม อีเมล นำเสนอ และสัมภาษณ์งาน",
+      en: "Practice English for real work situations: meetings, email, presentations, and interviews.",
+    },
+    rating: 4.5, reviews: 4320, students: 15900, price: 329, oldPrice: 1490,
+    hours: 16, lectures: 120, level: "beginner", bestseller: false, color: "from-amber-500 to-red-500",
+    learn: {
+      th: ["พูดในที่ประชุมได้มั่นใจ", "เขียนอีเมลธุรกิจ", "นำเสนองานเป็นภาษาอังกฤษ", "เทคนิคสัมภาษณ์งาน"],
+      en: ["Speak confidently in meetings", "Write business emails", "Present in English", "Job interview techniques"],
+    },
+    sections: [
+      { title: { th: "เริ่มต้นอย่างมั่นใจ", en: "Start with Confidence" },
+        lectures: [
+          { t: { th: "แนะนำตัวแบบมือโปร", en: "Introduce yourself like a pro" }, m: 12 },
+          { t: { th: "Small talk ในออฟฟิศ", en: "Office small talk" }, m: 14 }] },
+      { title: { th: "การประชุม", en: "Meetings" },
+        lectures: [
+          { t: { th: "ศัพท์ในห้องประชุม", en: "Meeting vocabulary" }, m: 15 },
+          { t: { th: "แสดงความคิดเห็นอย่างสุภาพ", en: "Giving opinions politely" }, m: 17 }] },
+    ],
+  },
+  {
+    id: 7, cat: "fin", instructor: { th: "อ.ปกรณ์ เศรษฐวัฒน์", en: "Pakorn Setthawat" },
+    title: { th: "ลงทุนหุ้นมือใหม่ เข้าใจง่าย ทำได้จริง", en: "Stock Investing for Beginners" },
+    desc: {
+      th: "ปูพื้นฐานการลงทุนหุ้นสำหรับมือใหม่ อ่านงบการเงิน วิเคราะห์กิจการ และวางแผนพอร์ต (เนื้อหาเพื่อการศึกษา)",
+      en: "Investing fundamentals for beginners: reading financial statements, analyzing companies, and portfolio planning (educational content).",
+    },
+    rating: 4.6, reviews: 7150, students: 28300, price: 379, oldPrice: 1790,
+    hours: 10, lectures: 72, level: "beginner", bestseller: false, color: "from-lime-500 to-green-600",
+    learn: {
+      th: ["เข้าใจกลไกตลาดหุ้น", "อ่านงบการเงินเบื้องต้น", "หลักการกระจายความเสี่ยง", "วางแผนการลงทุนระยะยาว"],
+      en: ["Understand how the stock market works", "Read financial statements", "Diversification principles", "Plan long-term investments"],
+    },
+    sections: [
+      { title: { th: "พื้นฐานต้องรู้", en: "The Basics" },
+        lectures: [
+          { t: { th: "หุ้นคืออะไร", en: "What is a stock?" }, m: 13 },
+          { t: { th: "เปิดพอร์ตอย่างไร", en: "Opening a brokerage account" }, m: 11 }] },
+      { title: { th: "วิเคราะห์กิจการ", en: "Analyzing Companies" },
+        lectures: [
+          { t: { th: "งบการเงิน 3 งบ", en: "The 3 financial statements" }, m: 21 },
+          { t: { th: "อัตราส่วนสำคัญ", en: "Key financial ratios" }, m: 18 }] },
+    ],
+  },
+  {
+    id: 8, cat: "dev", instructor: { th: "อ.ธนพล วงศ์สุวรรณ", en: "Thanapol Wongsuwan" },
+    title: { th: "SQL และฐานข้อมูลสำหรับสาย Data", en: "SQL & Databases for Data Careers" },
+    desc: {
+      th: "เขียน SQL ดึงและวิเคราะห์ข้อมูลได้จริง ตั้งแต่ SELECT พื้นฐานถึง JOIN และ Window Functions",
+      en: "Write real SQL to query and analyze data — from basic SELECT to JOINs and Window Functions.",
+    },
+    rating: 4.7, reviews: 5980, students: 21700, price: 359, oldPrice: 1690,
+    hours: 15, lectures: 110, level: "beginner", bestseller: false, color: "from-slate-600 to-zinc-800",
+    learn: {
+      th: ["เขียน query ดึงข้อมูลได้ทุกแบบ", "JOIN หลายตารางอย่างเข้าใจ", "สรุปข้อมูลด้วย GROUP BY", "Window Functions ขั้นสูง"],
+      en: ["Write any query you need", "JOIN multiple tables with confidence", "Summarize with GROUP BY", "Advanced Window Functions"],
+    },
+    sections: [
+      { title: { th: "เริ่มต้นกับ SQL", en: "Getting Started with SQL" },
+        lectures: [
+          { t: { th: "ฐานข้อมูลคืออะไร", en: "What is a database?" }, m: 10 },
+          { t: { th: "SELECT และ WHERE", en: "SELECT & WHERE" }, m: 16 }] },
+      { title: { th: "รวมตาราง", en: "Joining Tables" },
+        lectures: [
+          { t: { th: "INNER JOIN", en: "INNER JOIN" }, m: 18 },
+          { t: { th: "LEFT JOIN และเคสจริง", en: "LEFT JOIN & real cases" }, m: 20 }] },
+    ],
+  },
+  // ---------- หมวด AI ----------
+  { id: 9, cat: "ai", instructor: { th: "อ.ศุภกร เมธาวี", en: "Supakorn Methawee" },
+    title: { th: "ChatGPT ตั้งแต่พื้นฐานถึงขั้นเทพ", en: "ChatGPT: Beginner to Power User" },
+    desc: { th: "ใช้ ChatGPT ให้คุ้มทุกฟีเจอร์ ตั้งแต่ถาม-ตอบ จนถึงวิเคราะห์ไฟล์และสร้างงานอัตโนมัติ", en: "Master every ChatGPT feature, from everyday prompts to file analysis and automation." },
+    rating: 4.8, reviews: 15200, students: 68400, price: 599, oldPrice: 2490, hours: 16, lectures: 120, level: "beginner", bestseller: true, color: "from-teal-500 to-emerald-600",
+    learn: { th: ["เขียน prompt ให้ได้คำตอบที่ต้องการ", "ใช้วิเคราะห์ไฟล์และรูปภาพ", "สร้าง GPT ส่วนตัวของคุณเอง", "ประยุกต์กับงานจริงทุกอาชีพ"], en: ["Write prompts that get results", "Analyze files and images", "Build your own custom GPT", "Apply it to any profession"] },
+    sections: [
+      { title: { th: "เริ่มต้นกับ ChatGPT", en: "Getting Started" }, lectures: [ { t: { th: "รู้จักหน้าจอและโหมดต่าง ๆ", en: "Interface & modes tour" }, m: 12 }, { t: { th: "Prompt แรกที่ดี", en: "Your first great prompt" }, m: 15 } ] },
+      { title: { th: "ใช้งานขั้นสูง", en: "Advanced Usage" }, lectures: [ { t: { th: "วิเคราะห์ไฟล์ PDF/Excel", en: "Analyzing PDF/Excel files" }, m: 18 }, { t: { th: "สร้าง Custom GPT", en: "Building Custom GPTs" }, m: 20 } ] },
+    ] },
+  { id: 10, cat: "ai", instructor: { th: "อ.ศุภกร เมธาวี", en: "Supakorn Methawee" },
+    title: { th: "Claude AI เพื่อการทำงานและเขียนโค้ด", en: "Claude AI for Work & Coding" },
+    desc: { th: "ใช้ Claude ช่วยคิด วิเคราะห์เอกสารยาว เขียนงาน และสร้างแอปด้วย Artifacts", en: "Use Claude for deep analysis, long documents, writing, and building apps with Artifacts." },
+    rating: 4.8, reviews: 9800, students: 41200, price: 699, oldPrice: 2590, hours: 14, lectures: 98, level: "beginner", bestseller: true, color: "from-orange-400 to-amber-600",
+    learn: { th: ["วิเคราะห์เอกสารยาว ๆ ในครั้งเดียว", "สร้างเว็บแอปด้วย Artifacts", "ใช้ Projects จัดระเบียบงาน", "เขียนโค้ดคู่กับ Claude"], en: ["Analyze long documents at once", "Build web apps with Artifacts", "Organize work with Projects", "Pair-program with Claude"] },
+    sections: [
+      { title: { th: "พื้นฐาน Claude", en: "Claude Basics" }, lectures: [ { t: { th: "จุดเด่นที่ต่างจาก AI อื่น", en: "What makes Claude different" }, m: 10 }, { t: { th: "อัปโหลดและวิเคราะห์เอกสาร", en: "Uploading & analyzing docs" }, m: 16 } ] },
+      { title: { th: "Artifacts และงานสร้างสรรค์", en: "Artifacts & Creation" }, lectures: [ { t: { th: "สร้างเว็บแรกด้วย Artifacts", en: "First web app with Artifacts" }, m: 20 }, { t: { th: "เวิร์กโฟลว์เขียนโค้ดจริง", en: "Real coding workflows" }, m: 22 } ] },
+    ] },
+  { id: 11, cat: "ai", instructor: { th: "อ.ปริญญ์ อินทรกำแหง", en: "Prin Intarakamhaeng" },
+    title: { th: "Google Gemini ครบทุกฟีเจอร์", en: "Google Gemini: The Complete Guide" },
+    desc: { th: "ใช้ Gemini คู่กับ Gmail, Docs, Sheets และมือถือ Android ให้ทำงานแทนคุณ", en: "Use Gemini across Gmail, Docs, Sheets, and Android to work for you." },
+    rating: 4.6, reviews: 6400, students: 27800, price: 499, oldPrice: 1990, hours: 12, lectures: 86, level: "beginner", bestseller: false, color: "from-blue-500 to-indigo-500",
+    learn: { th: ["ใช้ Gemini ใน Gmail/Docs/Sheets", "ค้นหาข้อมูลแบบ Deep Research", "สั่งงานด้วยเสียงบนมือถือ", "เชื่อมกับบริการ Google ทั้งหมด"], en: ["Gemini in Gmail/Docs/Sheets", "Deep Research mode", "Voice commands on mobile", "Connect all Google services"] },
+    sections: [
+      { title: { th: "เริ่มต้นกับ Gemini", en: "Getting Started" }, lectures: [ { t: { th: "Gemini ในชีวิตประจำวัน", en: "Gemini in daily life" }, m: 11 }, { t: { th: "ใช้ใน Google Workspace", en: "Gemini in Google Workspace" }, m: 17 } ] },
+      { title: { th: "ฟีเจอร์ขั้นสูง", en: "Advanced Features" }, lectures: [ { t: { th: "Deep Research ทำรายงาน", en: "Reports with Deep Research" }, m: 19 }, { t: { th: "Gems ผู้ช่วยเฉพาะทาง", en: "Custom Gems assistants" }, m: 15 } ] },
+    ] },
+  { id: 12, cat: "ai", instructor: { th: "อ.วีรภัทร ตั้งใจดี", en: "Weeraphat Tangjaidee" },
+    title: { th: "Microsoft Copilot ใน Word Excel PowerPoint", en: "Microsoft Copilot in Word, Excel & PowerPoint" },
+    desc: { th: "ให้ AI ช่วยร่างเอกสาร สรุปประชุม ทำสูตร Excel และสไลด์นำเสนอในไม่กี่นาที", en: "Let AI draft documents, summarize meetings, write Excel formulas, and build slides in minutes." },
+    rating: 4.6, reviews: 5900, students: 24600, price: 899, oldPrice: 2990, hours: 15, lectures: 105, level: "beginner", bestseller: false, color: "from-sky-600 to-blue-700",
+    learn: { th: ["ร่างเอกสาร Word อัตโนมัติ", "สูตรและวิเคราะห์ Excel ด้วย AI", "สร้างสไลด์จากเอกสาร", "สรุปประชุมใน Teams"], en: ["Auto-draft Word documents", "AI formulas & analysis in Excel", "Slides from documents", "Meeting summaries in Teams"] },
+    sections: [
+      { title: { th: "Copilot ใน Word", en: "Copilot in Word" }, lectures: [ { t: { th: "ร่างและปรับแต่งเอกสาร", en: "Drafting & refining docs" }, m: 14 }, { t: { th: "สรุปเอกสารยาว", en: "Summarizing long docs" }, m: 12 } ] },
+      { title: { th: "Copilot ใน Excel", en: "Copilot in Excel" }, lectures: [ { t: { th: "สร้างสูตรด้วยภาษาคน", en: "Formulas in plain language" }, m: 16 }, { t: { th: "วิเคราะห์และทำกราฟ", en: "Analysis & charts" }, m: 18 } ] },
+    ] },
+  { id: 13, cat: "ai", instructor: { th: "อ.ณิชา อารีวงศ์", en: "Nicha Areewong" },
+    title: { th: "Midjourney สร้างภาพระดับมืออาชีพ", en: "Midjourney: Professional AI Art" },
+    desc: { th: "สร้างภาพสวยระดับงานโฆษณา คุมสไตล์ แสง มุมกล้อง และตัวละครให้คงที่", en: "Create ad-quality images with full control of style, lighting, angles, and consistent characters." },
+    rating: 4.9, reviews: 11300, students: 38900, price: 990, oldPrice: 3490, hours: 18, lectures: 130, level: "beginner", bestseller: true, color: "from-purple-500 to-pink-500",
+    learn: { th: ["เขียน prompt ภาพให้ได้ดั่งใจ", "คุมสไตล์และโทนภาพ", "ตัวละครหน้าเดิมทุกภาพ", "ทำงานจริง: โลโก้ โฆษณา สินค้า"], en: ["Prompts that match your vision", "Control style & tone", "Consistent characters", "Real work: logos, ads, products"] },
+    sections: [
+      { title: { th: "พื้นฐาน Midjourney", en: "Midjourney Basics" }, lectures: [ { t: { th: "สมัครและสร้างภาพแรก", en: "Setup & first image" }, m: 12 }, { t: { th: "โครงสร้าง prompt ที่ดี", en: "Anatomy of a good prompt" }, m: 18 } ] },
+      { title: { th: "เทคนิคมือโปร", en: "Pro Techniques" }, lectures: [ { t: { th: "พารามิเตอร์สำคัญทั้งหมด", en: "All key parameters" }, m: 20 }, { t: { th: "ตัวละครคงที่ด้วย cref", en: "Consistent characters with cref" }, m: 17 } ] },
+    ] },
+  { id: 14, cat: "ai", instructor: { th: "อ.ธนพล วงศ์สุวรรณ", en: "Thanapol Wongsuwan" },
+    title: { th: "Stable Diffusion ฟรีและปรับแต่งได้ไร้ขีดจำกัด", en: "Stable Diffusion: Free & Unlimited" },
+    desc: { th: "ติดตั้งใช้ฟรีบนเครื่องตัวเอง ปรับแต่งโมเดล LoRA และ ControlNet ระดับลึก", en: "Run it free on your own machine and go deep with LoRA models and ControlNet." },
+    rating: 4.7, reviews: 4800, students: 16700, price: 799, oldPrice: 2790, hours: 20, lectures: 145, level: "intermediate", bestseller: false, color: "from-zinc-700 to-purple-800",
+    learn: { th: ["ติดตั้งบนเครื่องตัวเองฟรี", "ใช้โมเดลและ LoRA จากชุมชน", "คุมท่าทางด้วย ControlNet", "เทรนโมเดลจากภาพของคุณ"], en: ["Free local installation", "Community models & LoRA", "Pose control with ControlNet", "Train on your own images"] },
+    sections: [
+      { title: { th: "ติดตั้งและเริ่มต้น", en: "Setup" }, lectures: [ { t: { th: "ติดตั้ง WebUI ทีละขั้น", en: "Installing WebUI step by step" }, m: 22 }, { t: { th: "ภาพแรกและการตั้งค่า", en: "First image & settings" }, m: 15 } ] },
+      { title: { th: "ขั้นสูง", en: "Advanced" }, lectures: [ { t: { th: "LoRA และโมเดลเสริม", en: "LoRA & custom models" }, m: 19 }, { t: { th: "ControlNet คุมทุกท่าทาง", en: "Full control with ControlNet" }, m: 21 } ] },
+    ] },
+  { id: 15, cat: "ai", instructor: { th: "อ.พิมพ์ลภัส จันทร์เพ็ญ", en: "Pimlapas Chanpen" },
+    title: { th: "Canva AI ออกแบบกราฟิกเร็ว 10 เท่า", en: "Canva AI: Design 10x Faster" },
+    desc: { th: "ใช้ Magic Studio ของ Canva สร้างโพสต์ โลโก้ วิดีโอ และงานนำเสนอด้วย AI", en: "Use Canva Magic Studio to create posts, logos, videos, and presentations with AI." },
+    rating: 4.5, reviews: 7200, students: 31500, price: 399, oldPrice: 1490, hours: 8, lectures: 60, level: "beginner", bestseller: false, color: "from-cyan-400 to-teal-500",
+    learn: { th: ["Magic Design สร้างงานจากข้อความ", "ลบพื้นหลัง/ขยายภาพด้วย AI", "ทำวิดีโอสั้นอัตโนมัติ", "แบรนด์คิทสำหรับธุรกิจ"], en: ["Magic Design from text", "AI background removal & expand", "Auto short-form videos", "Brand kits for business"] },
+    sections: [
+      { title: { th: "Magic Studio", en: "Magic Studio" }, lectures: [ { t: { th: "สร้างโพสต์จากข้อความเดียว", en: "Posts from a single prompt" }, m: 10 }, { t: { th: "แต่งภาพด้วย Magic Edit", en: "Magic Edit retouching" }, m: 13 } ] },
+      { title: { th: "งานจริงเชิงธุรกิจ", en: "Business Workflows" }, lectures: [ { t: { th: "ชุดโพสต์ทั้งเดือนใน 1 ชม.", en: "A month of posts in 1 hour" }, m: 16 }, { t: { th: "งานนำเสนออัตโนมัติ", en: "Auto presentations" }, m: 12 } ] },
+    ] },
+  { id: 16, cat: "ai", instructor: { th: "อ.กมลชนก ศรีวิไล", en: "Kamonchanok Sriwilai" },
+    title: { th: "AI สร้างวิดีโอ: Sora, Runway, Kling, Veo", en: "AI Video: Sora, Runway, Kling & Veo" },
+    desc: { th: "สร้างวิดีโอจากข้อความและภาพนิ่ง เปรียบเทียบทุกเครื่องมือดังพร้อมเวิร์กโฟลว์งานจริง", en: "Generate video from text and images — every major tool compared, with real production workflows." },
+    rating: 4.7, reviews: 6100, students: 21900, price: 1290, oldPrice: 3990, hours: 16, lectures: 110, level: "beginner", bestseller: true, color: "from-red-500 to-rose-600",
+    learn: { th: ["เลือกเครื่องมือให้เหมาะกับงาน", "prompt วิดีโอที่ได้ผลจริง", "ภาพนิ่งให้ขยับมีชีวิต", "ตัดต่อรวมเป็นคลิปสมบูรณ์"], en: ["Pick the right tool per job", "Video prompts that work", "Animate still images", "Edit into finished clips"] },
+    sections: [
+      { title: { th: "ภาพรวมเครื่องมือ", en: "Tool Landscape" }, lectures: [ { t: { th: "Sora vs Runway vs Kling vs Veo", en: "Sora vs Runway vs Kling vs Veo" }, m: 18 }, { t: { th: "คิดภาพก่อนสั่ง AI", en: "Storyboarding for AI" }, m: 14 } ] },
+      { title: { th: "ลงมือทำจริง", en: "Hands-on Production" }, lectures: [ { t: { th: "คลิปโฆษณา 30 วิ ชิ้นแรก", en: "Your first 30s ad clip" }, m: 22 }, { t: { th: "เทคนิคความต่อเนื่องของฉาก", en: "Scene consistency tricks" }, m: 19 } ] },
+    ] },
+  { id: 17, cat: "ai", instructor: { th: "อ.ปริญญ์ อินทรกำแหง", en: "Prin Intarakamhaeng" },
+    title: { th: "ElevenLabs สร้างเสียงพากย์ AI เหมือนจริง", en: "ElevenLabs: Realistic AI Voiceovers" },
+    desc: { th: "สร้างเสียงพากย์ภาษาไทย/อังกฤษ โคลนเสียง และทำเสียงให้คอนเทนต์ทุกแพลตฟอร์ม", en: "Create Thai/English voiceovers, clone voices, and produce audio for any platform." },
+    rating: 4.6, reviews: 3900, students: 14200, price: 599, oldPrice: 1990, hours: 9, lectures: 64, level: "beginner", bestseller: false, color: "from-stone-600 to-zinc-800",
+    learn: { th: ["เสียงพากย์ธรรมชาติหลายภาษา", "โคลนเสียงอย่างมีจริยธรรม", "พากย์วิดีโอและ Podcast", "เชื่อม API สร้างเสียงอัตโนมัติ"], en: ["Natural multilingual voiceovers", "Ethical voice cloning", "Dubbing videos & podcasts", "Automate with the API"] },
+    sections: [
+      { title: { th: "พื้นฐานการสร้างเสียง", en: "Voice Basics" }, lectures: [ { t: { th: "เลือกเสียงและตั้งค่า", en: "Choosing voices & settings" }, m: 11 }, { t: { th: "พากย์คลิปแรกของคุณ", en: "Your first voiceover" }, m: 14 } ] },
+      { title: { th: "ขั้นสูง", en: "Advanced" }, lectures: [ { t: { th: "โคลนเสียงตัวเอง", en: "Cloning your own voice" }, m: 16 }, { t: { th: "งานพากย์เชิงพาณิชย์", en: "Commercial dubbing work" }, m: 13 } ] },
+    ] },
+  { id: 18, cat: "ai", instructor: { th: "อ.ณิชา อารีวงศ์", en: "Nicha Areewong" },
+    title: { th: "Suno สร้างเพลงด้วย AI จากศูนย์", en: "Suno: Make Music with AI" },
+    desc: { th: "แต่งเพลงพร้อมเนื้อร้องและดนตรีเต็มวง ทำเพลงประกอบคอนเทนต์และจิงเกิลธุรกิจ", en: "Compose full songs with lyrics and instruments — content music and business jingles." },
+    rating: 4.5, reviews: 3200, students: 11800, price: 499, oldPrice: 1790, hours: 8, lectures: 58, level: "beginner", bestseller: false, color: "from-pink-500 to-fuchsia-600",
+    learn: { th: ["สั่งแนวเพลงและอารมณ์ให้แม่น", "เขียนเนื้อร้องร่วมกับ AI", "ทำจิงเกิลแบรนด์ของคุณ", "ข้อควรรู้เรื่องลิขสิทธิ์"], en: ["Nail genre & mood prompts", "Co-write lyrics with AI", "Create your brand jingle", "Copyright essentials"] },
+    sections: [
+      { title: { th: "แต่งเพลงแรก", en: "Your First Song" }, lectures: [ { t: { th: "โครงสร้าง prompt เพลง", en: "Music prompt structure" }, m: 12 }, { t: { th: "ปรับจนได้เวอร์ชันที่ใช่", en: "Iterating to the right take" }, m: 14 } ] },
+      { title: { th: "ใช้งานเชิงพาณิชย์", en: "Commercial Use" }, lectures: [ { t: { th: "จิงเกิลและเพลงโฆษณา", en: "Jingles & ad music" }, m: 13 }, { t: { th: "ลิขสิทธิ์และการนำไปใช้", en: "Rights & usage" }, m: 10 } ] },
+    ] },
+  { id: 19, cat: "ai", instructor: { th: "อ.ศุภกร เมธาวี", en: "Supakorn Methawee" },
+    title: { th: "Prompt Engineering เขียนคำสั่ง AI ให้เก่งที่สุด", en: "Prompt Engineering Mastery" },
+    desc: { th: "ศาสตร์การสั่ง AI ทุกตัวให้ได้ผลลัพธ์ระดับมือโปร ใช้ได้กับ ChatGPT, Claude, Gemini", en: "The craft of instructing any AI for pro-level results — works across ChatGPT, Claude, Gemini." },
+    rating: 4.9, reviews: 13400, students: 52300, price: 990, oldPrice: 2990, hours: 12, lectures: 92, level: "all", bestseller: true, color: "from-violet-600 to-indigo-700",
+    learn: { th: ["สูตรโครงสร้าง prompt ที่ใช้ได้ทุก AI", "เทคนิค role, example, chain-of-thought", "สร้างคลัง prompt สำหรับอาชีพคุณ", "ทดสอบและปรับปรุงอย่างเป็นระบบ"], en: ["Prompt frameworks for any AI", "Roles, examples, chain-of-thought", "Build your career prompt library", "Test & refine systematically"] },
+    sections: [
+      { title: { th: "หลักการสำคัญ", en: "Core Principles" }, lectures: [ { t: { th: "ทำไม prompt ถึงสำคัญ", en: "Why prompts matter" }, m: 10 }, { t: { th: "โครงสร้าง 5 ส่วนของ prompt ดี", en: "The 5-part prompt structure" }, m: 17 } ] },
+      { title: { th: "เทคนิคขั้นสูง", en: "Advanced Techniques" }, lectures: [ { t: { th: "Few-shot และตัวอย่างนำทาง", en: "Few-shot prompting" }, m: 15 }, { t: { th: "Chain-of-thought ให้ AI คิดเป็นขั้น", en: "Chain-of-thought reasoning" }, m: 18 } ] },
+    ] },
+  { id: 20, cat: "ai", instructor: { th: "อ.วีรภัทร ตั้งใจดี", en: "Weeraphat Tangjaidee" },
+    title: { th: "สร้างระบบอัตโนมัติด้วย AI: n8n, Make, Zapier", en: "AI Automation with n8n, Make & Zapier" },
+    desc: { th: "ต่อ AI เข้ากับแอปที่ใช้ทุกวัน ให้ระบบทำงานแทนคุณตลอด 24 ชั่วโมง", en: "Connect AI to your everyday apps and let systems work for you 24/7." },
+    rating: 4.7, reviews: 5600, students: 19400, price: 1490, oldPrice: 3990, hours: 18, lectures: 125, level: "intermediate", bestseller: false, color: "from-amber-500 to-orange-600",
+    learn: { th: ["ตอบอีเมล/แชทลูกค้าอัตโนมัติ", "สรุปข่าวส่งเข้า Line ทุกเช้า", "เชื่อม ChatGPT เข้ากับ Google Sheets", "ระบบโพสต์คอนเทนต์อัตโนมัติ"], en: ["Auto-reply email & chat", "Daily news digests to chat apps", "ChatGPT + Google Sheets", "Auto content posting systems"] },
+    sections: [
+      { title: { th: "แนวคิด Automation", en: "Automation Thinking" }, lectures: [ { t: { th: "เลือกเครื่องมือให้เหมาะ", en: "Choosing the right tool" }, m: 13 }, { t: { th: "Workflow แรกของคุณ", en: "Your first workflow" }, m: 18 } ] },
+      { title: { th: "ต่อ AI เข้าระบบ", en: "Adding AI to Flows" }, lectures: [ { t: { th: "AI อ่านและตอบอีเมล", en: "AI reads & replies to email" }, m: 20 }, { t: { th: "บอทสรุปรายงานรายวัน", en: "Daily report bots" }, m: 17 } ] },
+    ] },
+  { id: 21, cat: "ai", instructor: { th: "อ.ธนพล วงศ์สุวรรณ", en: "Thanapol Wongsuwan" },
+    title: { th: "Vibe Coding สร้างแอปด้วย AI: Cursor, Claude Code", en: "Vibe Coding: Build Apps with Cursor & Claude Code" },
+    desc: { th: "ไม่ต้องเขียนโค้ดเก่งก็สร้างแอปได้ ให้ AI เขียนให้ทั้งหมดแล้วคุณเป็นผู้กำกับ", en: "Build real apps without deep coding skills — let AI write the code while you direct." },
+    rating: 4.8, reviews: 8700, students: 29800, price: 1990, oldPrice: 3990, hours: 22, lectures: 160, level: "beginner", bestseller: true, color: "from-emerald-600 to-teal-700",
+    learn: { th: ["สั่ง AI สร้างเว็บ/แอปทั้งตัว", "ใช้ Cursor และ Claude Code", "แก้บั๊กโดยให้ AI ช่วยไล่", "Deploy ขึ้นใช้งานจริง"], en: ["Direct AI to build full apps", "Master Cursor & Claude Code", "Debug together with AI", "Deploy to production"] },
+    sections: [
+      { title: { th: "โลกของ Vibe Coding", en: "The Vibe Coding World" }, lectures: [ { t: { th: "แนวคิดและเครื่องมือ", en: "Concepts & tools" }, m: 14 }, { t: { th: "ติดตั้ง Cursor และเริ่มโปรเจกต์", en: "Setup Cursor & first project" }, m: 18 } ] },
+      { title: { th: "สร้างแอปจริง", en: "Building Real Apps" }, lectures: [ { t: { th: "เว็บแอปแรกใน 1 ชั่วโมง", en: "First web app in 1 hour" }, m: 25 }, { t: { th: "Deploy และต่อยอด", en: "Deploying & iterating" }, m: 20 } ] },
+    ] },
+  { id: 22, cat: "ai", instructor: { th: "อ.พิมพ์ลภัส จันทร์เพ็ญ", en: "Pimlapas Chanpen" },
+    title: { th: "AI สำหรับการตลาดและคอนเทนต์", en: "AI for Marketing & Content" },
+    desc: { th: "ผลิตคอนเทนต์ทั้งเดือนในวันเดียว วางแผน เขียน ทำภาพ และวัดผลด้วย AI", en: "Produce a month of content in a day — plan, write, design, and measure with AI." },
+    rating: 4.7, reviews: 7800, students: 26500, price: 899, oldPrice: 2790, hours: 14, lectures: 96, level: "beginner", bestseller: false, color: "from-rose-400 to-red-500",
+    learn: { th: ["แผนคอนเทนต์รายเดือนด้วย AI", "เขียนแคปชันหลายแพลตฟอร์ม", "ภาพประกอบโพสต์อัตโนมัติ", "วิเคราะห์ผลและปรับกลยุทธ์"], en: ["Monthly content plans with AI", "Multi-platform captions", "Auto post visuals", "Analyze & adjust strategy"] },
+    sections: [
+      { title: { th: "วางแผนด้วย AI", en: "Planning with AI" }, lectures: [ { t: { th: "หาไอเดียไม่มีวันตัน", en: "Never run out of ideas" }, m: 13 }, { t: { th: "ปฏิทินคอนเทนต์อัตโนมัติ", en: "Auto content calendars" }, m: 15 } ] },
+      { title: { th: "ผลิตและวัดผล", en: "Produce & Measure" }, lectures: [ { t: { th: "เขียน 30 โพสต์ใน 1 ชม.", en: "30 posts in 1 hour" }, m: 18 }, { t: { th: "อ่านผลลัพธ์ให้เป็น", en: "Reading your metrics" }, m: 14 } ] },
+    ] },
+  { id: 23, cat: "ai", instructor: { th: "อ.วีรภัทร ตั้งใจดี", en: "Weeraphat Tangjaidee" },
+    title: { th: "AI วิเคราะห์ข้อมูลและ Excel อัจฉริยะ", en: "AI Data Analysis & Smart Excel" },
+    desc: { th: "โยนไฟล์ให้ AI วิเคราะห์ สรุปเทรนด์ ทำกราฟ และรายงานอัตโนมัติโดยไม่ต้องจำสูตร", en: "Drop files into AI for analysis, trends, charts, and automated reports — no formulas required." },
+    rating: 4.6, reviews: 5100, students: 18700, price: 799, oldPrice: 2490, hours: 12, lectures: 88, level: "beginner", bestseller: false, color: "from-green-500 to-emerald-700",
+    learn: { th: ["วิเคราะห์ไฟล์ Excel/CSV ด้วย AI", "หา insight จากข้อมูลขาย", "สร้างกราฟและ Dashboard", "รายงานประจำเดือนอัตโนมัติ"], en: ["Analyze Excel/CSV with AI", "Find insights in sales data", "Charts & dashboards", "Automated monthly reports"] },
+    sections: [
+      { title: { th: "AI อ่านข้อมูลของคุณ", en: "AI Reads Your Data" }, lectures: [ { t: { th: "อัปโหลดและถามข้อมูล", en: "Upload & interrogate data" }, m: 14 }, { t: { th: "ทำความสะอาดข้อมูลด้วย AI", en: "Cleaning data with AI" }, m: 16 } ] },
+      { title: { th: "จาก insight สู่รายงาน", en: "From Insight to Report" }, lectures: [ { t: { th: "กราฟที่เล่าเรื่องได้", en: "Charts that tell stories" }, m: 15 }, { t: { th: "รายงานอัตโนมัติรายเดือน", en: "Automated monthly reports" }, m: 17 } ] },
+    ] },
+  { id: 24, cat: "ai", instructor: { th: "อ.ปริญญ์ อินทรกำแหง", en: "Prin Intarakamhaeng" },
+    title: { th: "NotebookLM ผู้ช่วยวิจัยและสรุปเอกสาร", en: "NotebookLM: Your Research Assistant" },
+    desc: { th: "โยนเอกสารเป็นสิบไฟล์ให้ AI อ่านแล้วถามได้ทุกอย่าง พร้อมสร้าง Podcast สรุปให้ฟัง", en: "Feed it dozens of documents, ask anything, and even get an audio podcast summary." },
+    rating: 4.7, reviews: 4200, students: 15300, price: 399, oldPrice: 1290, hours: 6, lectures: 45, level: "beginner", bestseller: false, color: "from-indigo-400 to-blue-600",
+    learn: { th: ["รวมแหล่งข้อมูลไว้ที่เดียว", "ถาม-ตอบพร้อมอ้างอิงแหล่ง", "Audio Overview ฟังสรุปเหมือน Podcast", "ใช้เรียน สอบ และทำวิจัย"], en: ["All sources in one place", "Q&A with citations", "Audio Overview podcasts", "For study, exams & research"] },
+    sections: [
+      { title: { th: "เริ่มต้นใช้งาน", en: "Getting Started" }, lectures: [ { t: { th: "สร้าง Notebook แรก", en: "Your first notebook" }, m: 9 }, { t: { th: "ถามให้ได้คำตอบพร้อมอ้างอิง", en: "Cited answers from sources" }, m: 12 } ] },
+      { title: { th: "ใช้จริงกับการเรียน/งาน", en: "Real Study & Work Use" }, lectures: [ { t: { th: "สรุปหนังสือทั้งเล่ม", en: "Summarize whole books" }, m: 13 }, { t: { th: "Audio Overview ภาษาไทย", en: "Audio Overviews" }, m: 10 } ] },
+    ] },
+  { id: 25, cat: "ai", instructor: { th: "อ.กมลชนก ศรีวิไล", en: "Kamonchanok Sriwilai" },
+    title: { th: "สร้างแชทบอท AI ให้ธุรกิจของคุณ", en: "Build an AI Chatbot for Your Business" },
+    desc: { th: "แชทบอทตอบลูกค้า 24 ชม. บนเว็บ Line และ Facebook เทรนด้วยข้อมูลธุรกิจคุณเอง", en: "A 24/7 customer chatbot on web and social channels, trained on your own business data." },
+    rating: 4.6, reviews: 4600, students: 16100, price: 1290, oldPrice: 3490, hours: 15, lectures: 100, level: "intermediate", bestseller: false, color: "from-cyan-600 to-blue-800",
+    learn: { th: ["บอทตอบคำถามจากข้อมูลร้านคุณ", "ติดตั้งบนเว็บและช่องทางแชท", "ส่งต่อแอดมินเมื่อบอทตอบไม่ได้", "วัดผลและปรับปรุงบอท"], en: ["Bots that know your business", "Deploy to web & chat channels", "Human handoff flows", "Measure & improve"] },
+    sections: [
+      { title: { th: "ออกแบบบอทของคุณ", en: "Designing Your Bot" }, lectures: [ { t: { th: "เตรียมฐานความรู้ธุรกิจ", en: "Building the knowledge base" }, m: 16 }, { t: { th: "บุคลิกและโทนของบอท", en: "Bot personality & tone" }, m: 12 } ] },
+      { title: { th: "ติดตั้งใช้งานจริง", en: "Going Live" }, lectures: [ { t: { th: "ฝังบนเว็บไซต์", en: "Embedding on your site" }, m: 18 }, { t: { th: "เชื่อมช่องทางแชทหลัก", en: "Connecting chat channels" }, m: 20 } ] },
+    ] },
+  { id: 26, cat: "ai", instructor: { th: "ดร.อธิป จิตต์สำราญ", en: "Dr. Athip Jitsamran" },
+    title: { th: "Machine Learning พื้นฐานด้วย Python", en: "Machine Learning Fundamentals with Python" },
+    desc: { th: "เข้าใจเบื้องหลัง AI จริง ๆ สร้างโมเดลทำนายผลด้วย scikit-learn ตั้งแต่ศูนย์", en: "Understand how AI really works — build predictive models with scikit-learn from scratch." },
+    rating: 4.8, reviews: 6900, students: 22400, price: 2990, oldPrice: 5990, hours: 40, lectures: 280, level: "intermediate", bestseller: false, color: "from-blue-700 to-violet-800",
+    learn: { th: ["คณิตพื้นฐานแบบเข้าใจง่าย", "โมเดล Regression และ Classification", "ประเมินและปรับปรุงโมเดล", "โปรเจกต์ทำนายจริง 5 ชิ้น"], en: ["Intuitive math foundations", "Regression & classification", "Evaluate & tune models", "5 real prediction projects"] },
+    sections: [
+      { title: { th: "ปูพื้นฐาน", en: "Foundations" }, lectures: [ { t: { th: "ML คืออะไรกันแน่", en: "What ML actually is" }, m: 15 }, { t: { th: "เตรียมข้อมูลให้โมเดล", en: "Preparing data for models" }, m: 22 } ] },
+      { title: { th: "โมเดลแรกของคุณ", en: "Your First Models" }, lectures: [ { t: { th: "Linear Regression ลงมือทำ", en: "Hands-on Linear Regression" }, m: 25 }, { t: { th: "Classification ทำนายหมวดหมู่", en: "Classification in practice" }, m: 24 } ] },
+    ] },
+  { id: 27, cat: "ai", instructor: { th: "ดร.อธิป จิตต์สำราญ", en: "Dr. Athip Jitsamran" },
+    title: { th: "Data Science ครบวงจร จากศูนย์สู่มืออาชีพ", en: "Complete Data Science: Zero to Professional" },
+    desc: { th: "เส้นทางสายอาชีพ Data ฉบับเต็ม: Python, สถิติ, SQL, ML และโปรเจกต์ระดับ Portfolio", en: "The full data career path: Python, statistics, SQL, ML, and portfolio-grade projects." },
+    rating: 4.9, reviews: 9200, students: 27600, price: 3999, oldPrice: 7990, hours: 48, lectures: 320, level: "intermediate", bestseller: true, color: "from-fuchsia-600 to-purple-800",
+    learn: { th: ["Python และสถิติสำหรับงาน Data", "SQL ดึงข้อมูลระดับมือโปร", "สร้างโมเดล ML ใช้งานจริง", "Portfolio สมัครงานสาย Data"], en: ["Python & stats for data work", "Professional SQL", "Production-ready ML models", "A job-ready data portfolio"] },
+    sections: [
+      { title: { th: "เครื่องมือสาย Data", en: "The Data Toolkit" }, lectures: [ { t: { th: "Python + Pandas เริ่มต้น", en: "Python + Pandas basics" }, m: 24 }, { t: { th: "สถิติที่ใช้จริงทุกวัน", en: "Everyday statistics" }, m: 20 } ] },
+      { title: { th: "โปรเจกต์ Portfolio", en: "Portfolio Projects" }, lectures: [ { t: { th: "วิเคราะห์ข้อมูลธุรกิจจริง", en: "Real business analysis" }, m: 28 }, { t: { th: "นำเสนอผลงานให้ได้งาน", en: "Presenting to get hired" }, m: 18 } ] },
+    ] },
+  { id: 28, cat: "ai", instructor: { th: "อ.ปกรณ์ เศรษฐวัฒน์", en: "Pakorn Setthawat" },
+    title: { th: "จริยธรรมและกฎหมาย AI ที่คนทำงานต้องรู้", en: "AI Ethics & Law for Professionals" },
+    desc: { th: "ใช้ AI อย่างปลอดภัยและถูกกฎหมาย: ลิขสิทธิ์ ข้อมูลส่วนบุคคล PDPA และความเสี่ยงองค์กร", en: "Use AI safely and legally: copyright, privacy, PDPA, and organizational risk." },
+    rating: 4.5, reviews: 2800, students: 9600, price: 599, oldPrice: 1990, hours: 8, lectures: 55, level: "all", bestseller: false, color: "from-slate-500 to-zinc-700",
+    learn: { th: ["ลิขสิทธิ์งานที่ AI สร้าง", "PDPA กับข้อมูลที่ป้อนให้ AI", "นโยบายใช้ AI ในองค์กร", "ตรวจจับและรับมือข้อมูลปลอม"], en: ["Copyright of AI-generated work", "Privacy law & AI inputs", "Company AI policies", "Detecting misinformation"] },
+    sections: [
+      { title: { th: "กฎหมายที่เกี่ยวข้อง", en: "The Legal Landscape" }, lectures: [ { t: { th: "ลิขสิทธิ์ยุค AI", en: "Copyright in the AI era" }, m: 14 }, { t: { th: "PDPA และข้อมูลส่วนบุคคล", en: "Privacy & data protection" }, m: 16 } ] },
+      { title: { th: "ใช้อย่างรับผิดชอบ", en: "Responsible Use" }, lectures: [ { t: { th: "นโยบาย AI สำหรับทีม", en: "AI policy for teams" }, m: 12 }, { t: { th: "เช็กข้อเท็จจริงจาก AI", en: "Fact-checking AI outputs" }, m: 11 } ] },
+    ] },
+  // ---------- เขียนโปรแกรม (เพิ่ม) ----------
+  { id: 29, cat: "dev", instructor: { th: "อ.กมลชนก ศรีวิไล", en: "Kamonchanok Sriwilai" },
+    title: { th: "JavaScript สร้างเว็บจากศูนย์", en: "JavaScript: Build Websites from Zero" },
+    desc: { th: "ภาษาหัวใจของเว็บ เรียนจากพื้นฐานจนทำเว็บ interactive ได้ด้วยตัวเอง", en: "The language of the web — from basics to building interactive sites yourself." },
+    rating: 4.7, reviews: 10200, students: 44300, price: 599, oldPrice: 2290, hours: 24, lectures: 170, level: "beginner", bestseller: true, color: "from-yellow-400 to-amber-500",
+    learn: { th: ["พื้นฐาน JS ที่ถูกต้องแข็งแรง", "จัดการ DOM และ event", "ดึงข้อมูลจาก API", "โปรเจกต์เว็บจริง 4 ชิ้น"], en: ["Rock-solid JS fundamentals", "DOM & events", "Fetching data from APIs", "4 real web projects"] },
+    sections: [
+      { title: { th: "พื้นฐานภาษา", en: "Language Basics" }, lectures: [ { t: { th: "ตัวแปรและชนิดข้อมูล", en: "Variables & types" }, m: 14 }, { t: { th: "ฟังก์ชันและ scope", en: "Functions & scope" }, m: 18 } ] },
+      { title: { th: "ทำเว็บ interactive", en: "Interactive Web" }, lectures: [ { t: { th: "DOM และ event", en: "DOM & events" }, m: 20 }, { t: { th: "ดึงข้อมูลด้วย fetch", en: "Fetching with APIs" }, m: 19 } ] },
+    ] },
+  { id: 30, cat: "dev", instructor: { th: "อ.ธนพล วงศ์สุวรรณ", en: "Thanapol Wongsuwan" },
+    title: { th: "Flutter สร้างแอปมือถือ iOS และ Android", en: "Flutter: iOS & Android Apps" },
+    desc: { th: "เขียนครั้งเดียวได้ 2 แพลตฟอร์ม สร้างแอปสวยลื่นจนถึงส่งขึ้นสโตร์", en: "Write once, run on both platforms — beautiful apps all the way to store release." },
+    rating: 4.7, reviews: 5400, students: 18900, price: 1490, oldPrice: 3990, hours: 30, lectures: 210, level: "intermediate", bestseller: false, color: "from-sky-400 to-blue-600",
+    learn: { th: ["ภาษา Dart และ Widget", "ออกแบบ UI สวยทุกขนาดจอ", "เชื่อมฐานข้อมูลและ API", "ส่งแอปขึ้น App Store/Play Store"], en: ["Dart & widgets", "Responsive beautiful UI", "Databases & APIs", "Publishing to both stores"] },
+    sections: [
+      { title: { th: "เริ่มต้น Flutter", en: "Flutter Basics" }, lectures: [ { t: { th: "ติดตั้งและแอปแรก", en: "Setup & first app" }, m: 18 }, { t: { th: "Widget สำคัญที่ใช้บ่อย", en: "Essential widgets" }, m: 22 } ] },
+      { title: { th: "แอปจริง", en: "Real Apps" }, lectures: [ { t: { th: "แอป Todo เต็มรูปแบบ", en: "Full todo app" }, m: 26 }, { t: { th: "ส่งขึ้นสโตร์", en: "Store release" }, m: 20 } ] },
+    ] },
+  { id: 31, cat: "dev", instructor: { th: "อ.ธนพล วงศ์สุวรรณ", en: "Thanapol Wongsuwan" },
+    title: { th: "Node.js สร้างระบบหลังบ้าน API", en: "Node.js Backend & APIs" },
+    desc: { th: "สร้าง server, REST API และเชื่อมฐานข้อมูล พื้นฐานสำคัญของนักพัฒนา full-stack", en: "Servers, REST APIs, and databases — the backbone of full-stack development." },
+    rating: 4.6, reviews: 4100, students: 14800, price: 1290, oldPrice: 3490, hours: 26, lectures: 180, level: "intermediate", bestseller: false, color: "from-lime-600 to-green-700",
+    learn: { th: ["สร้าง server ด้วย Express", "ออกแบบ REST API ที่ดี", "เชื่อม MongoDB/PostgreSQL", "ระบบล็อกอินและความปลอดภัย"], en: ["Servers with Express", "Well-designed REST APIs", "MongoDB/PostgreSQL", "Auth & security"] },
+    sections: [
+      { title: { th: "พื้นฐาน Backend", en: "Backend Basics" }, lectures: [ { t: { th: "Node.js ทำงานอย่างไร", en: "How Node.js works" }, m: 15 }, { t: { th: "API แรกด้วย Express", en: "First API with Express" }, m: 20 } ] },
+      { title: { th: "ฐานข้อมูลและ Auth", en: "Data & Auth" }, lectures: [ { t: { th: "CRUD กับฐานข้อมูล", en: "CRUD with a database" }, m: 24 }, { t: { th: "ระบบล็อกอิน JWT", en: "JWT authentication" }, m: 22 } ] },
+    ] },
+  { id: 32, cat: "dev", instructor: { th: "อ.กมลชนก ศรีวิไล", en: "Kamonchanok Sriwilai" },
+    title: { th: "Git และ GitHub ทำงานเป็นทีมแบบมือโปร", en: "Git & GitHub for Professional Teams" },
+    desc: { th: "จัดการเวอร์ชันโค้ด ทำงานร่วมทีม และสร้างโปรไฟล์ GitHub ให้ได้งาน", en: "Version control, team collaboration, and a GitHub profile that gets you hired." },
+    rating: 4.7, reviews: 6800, students: 26700, price: 399, oldPrice: 1490, hours: 8, lectures: 55, level: "all", bestseller: false, color: "from-zinc-800 to-zinc-500",
+    learn: { th: ["คำสั่ง Git ที่ใช้จริงทุกวัน", "Branch และ Merge อย่างเข้าใจ", "Pull Request และรีวิวโค้ด", "แก้สถานการณ์พังให้รอด"], en: ["Everyday Git commands", "Branching & merging", "Pull requests & reviews", "Recovering from disasters"] },
+    sections: [
+      { title: { th: "Git พื้นฐาน", en: "Git Basics" }, lectures: [ { t: { th: "commit แรกของคุณ", en: "Your first commit" }, m: 12 }, { t: { th: "branch และ merge", en: "Branch & merge" }, m: 16 } ] },
+      { title: { th: "ทำงานเป็นทีม", en: "Teamwork" }, lectures: [ { t: { th: "Pull Request จริง", en: "Real pull requests" }, m: 15 }, { t: { th: "แก้ conflict อย่างสงบ", en: "Resolving conflicts calmly" }, m: 13 } ] },
+    ] },
+  { id: 33, cat: "dev", instructor: { th: "อ.ปริญญ์ อินทรกำแหง", en: "Prin Intarakamhaeng" },
+    title: { th: "Cybersecurity พื้นฐานสำหรับทุกคน", en: "Cybersecurity Essentials for Everyone" },
+    desc: { th: "ป้องกันตัวเองและองค์กรจากภัยไซเบอร์ รู้ทันมิจฉาชีพ ฟิชชิง และการรั่วของข้อมูล", en: "Protect yourself and your organization — scams, phishing, and data leaks explained." },
+    rating: 4.6, reviews: 3600, students: 13500, price: 899, oldPrice: 2990, hours: 14, lectures: 95, level: "beginner", bestseller: false, color: "from-red-600 to-rose-800",
+    learn: { th: ["รู้ทันกลโกงออนไลน์ทุกแบบ", "ตั้งรหัสผ่านและ 2FA ให้ปลอดภัย", "ปกป้องข้อมูลส่วนตัวและธุรกิจ", "รับมือเมื่อโดนแฮ็ก"], en: ["Recognize every online scam", "Passwords & 2FA done right", "Protect personal & business data", "What to do when hacked"] },
+    sections: [
+      { title: { th: "ภัยใกล้ตัว", en: "Everyday Threats" }, lectures: [ { t: { th: "ฟิชชิงและมิจฉาชีพ", en: "Phishing & scams" }, m: 16 }, { t: { th: "มัลแวร์ทำงานอย่างไร", en: "How malware works" }, m: 14 } ] },
+      { title: { th: "ป้องกันตัวเอง", en: "Defending Yourself" }, lectures: [ { t: { th: "รหัสผ่านและ 2FA", en: "Passwords & 2FA" }, m: 13 }, { t: { th: "แผนรับมือเหตุการณ์", en: "Incident response plan" }, m: 15 } ] },
+    ] },
+  // ---------- ธุรกิจ (เพิ่ม) ----------
+  { id: 34, cat: "biz", instructor: { th: "อ.ชลธิชา บุญมั่น", en: "Chonticha Boonman" },
+    title: { th: "เริ่มต้นธุรกิจ: จากไอเดียสู่แผนธุรกิจ", en: "Startup 101: From Idea to Business Plan" },
+    desc: { th: "เปลี่ยนไอเดียเป็นธุรกิจจริง ทดสอบตลาด คิดต้นทุน-กำไร และเขียนแผนที่ใช้ได้จริง", en: "Turn ideas into real businesses — validate the market, model costs, write a working plan." },
+    rating: 4.7, reviews: 5800, students: 21200, price: 990, oldPrice: 2990, hours: 15, lectures: 100, level: "beginner", bestseller: false, color: "from-indigo-500 to-purple-600",
+    learn: { th: ["หาไอเดียที่ตลาดต้องการจริง", "ทดสอบก่อนลงทุนหนัก", "คำนวณต้นทุน กำไร จุดคุ้มทุน", "เขียนแผนธุรกิจฉบับใช้งาน"], en: ["Ideas the market wants", "Validate before investing", "Costs, margins, break-even", "A usable business plan"] },
+    sections: [
+      { title: { th: "หาและทดสอบไอเดีย", en: "Finding & Testing Ideas" }, lectures: [ { t: { th: "ปัญหาที่คนยอมจ่าย", en: "Problems people pay for" }, m: 14 }, { t: { th: "ทดสอบตลาดงบหลักร้อย", en: "Market tests on a tiny budget" }, m: 16 } ] },
+      { title: { th: "ตัวเลขและแผน", en: "Numbers & Plan" }, lectures: [ { t: { th: "ต้นทุนและจุดคุ้มทุน", en: "Costs & break-even" }, m: 18 }, { t: { th: "เขียนแผน 1 หน้า", en: "The one-page plan" }, m: 12 } ] },
+    ] },
+  { id: 35, cat: "biz", instructor: { th: "อ.ชลธิชา บุญมั่น", en: "Chonticha Boonman" },
+    title: { th: "ขายของออนไลน์ Shopee และ TikTok Shop", en: "Selling Online: Shopee & TikTok Shop" },
+    desc: { th: "เปิดร้าน ปั้นยอดขาย ทำคอนเทนต์ป้ายยา และบริหารสต๊อกให้กำไรจริง", en: "Open your store, drive sales, create converting content, and manage stock profitably." },
+    rating: 4.7, reviews: 8900, students: 32600, price: 799, oldPrice: 2490, hours: 12, lectures: 85, level: "beginner", bestseller: true, color: "from-orange-500 to-red-500",
+    learn: { th: ["เปิดร้านและตั้งค่าครบถ้วน", "ถ่ายรูป/วิดีโอสินค้าให้น่าซื้อ", "ไลฟ์ขายของและป้ายยา", "อ่านตัวเลขหลังร้านให้เป็น"], en: ["Store setup done right", "Product photos & videos that sell", "Live selling & content", "Reading seller analytics"] },
+    sections: [
+      { title: { th: "เปิดร้านให้ปัง", en: "Launching Your Store" }, lectures: [ { t: { th: "ตั้งค่าร้านและสินค้า", en: "Store & listing setup" }, m: 15 }, { t: { th: "รูปสินค้าที่ขายได้", en: "Photos that convert" }, m: 14 } ] },
+      { title: { th: "ปั้นยอดขาย", en: "Growing Sales" }, lectures: [ { t: { th: "คลิปป้ายยาสไตล์ TikTok", en: "TikTok-style selling clips" }, m: 17 }, { t: { th: "โปรโมชันและ Flash Sale", en: "Promos & flash sales" }, m: 13 } ] },
+    ] },
+  { id: 36, cat: "biz", instructor: { th: "อ.ปกรณ์ เศรษฐวัฒน์", en: "Pakorn Setthawat" },
+    title: { th: "บัญชีและภาษีสำหรับเจ้าของกิจการ", en: "Accounting & Tax for Business Owners" },
+    desc: { th: "อ่านงบเป็น ทำบัญชีถูกต้อง วางแผนภาษีนิติบุคคลและบุคคลธรรมดาอย่างมั่นใจ", en: "Read your books, keep them right, and plan business & personal taxes with confidence." },
+    rating: 4.6, reviews: 3900, students: 13800, price: 1290, oldPrice: 3490, hours: 16, lectures: 110, level: "beginner", bestseller: false, color: "from-teal-600 to-cyan-700",
+    learn: { th: ["บัญชีรายรับ-จ่ายที่ถูกต้อง", "VAT และภาษีหัก ณ ที่จ่าย", "จดบริษัทดีไหม เมื่อไหร่ควรจด", "วางแผนภาษีอย่างถูกกฎหมาย"], en: ["Clean income/expense books", "VAT & withholding tax", "When to incorporate", "Legal tax planning"] },
+    sections: [
+      { title: { th: "บัญชีพื้นฐานกิจการ", en: "Business Accounting" }, lectures: [ { t: { th: "แยกเงินร้านกับเงินตัว", en: "Separating business & personal" }, m: 13 }, { t: { th: "เอกสารที่ต้องเก็บ", en: "Documents to keep" }, m: 12 } ] },
+      { title: { th: "ภาษีที่ต้องรู้", en: "Taxes You Must Know" }, lectures: [ { t: { th: "VAT ฉบับเข้าใจง่าย", en: "VAT made simple" }, m: 18 }, { t: { th: "วางแผนภาษีทั้งปี", en: "Year-round tax planning" }, m: 17 } ] },
+    ] },
+  { id: 37, cat: "biz", instructor: { th: "อ.วีรภัทร ตั้งใจดี", en: "Weeraphat Tangjaidee" },
+    title: { th: "บริหารโครงการ Project Management มืออาชีพ", en: "Professional Project Management" },
+    desc: { th: "วางแผน คุมงบ คุมเวลา และนำทีมส่งงานให้สำเร็จ ทั้งแบบ Waterfall และ Agile", en: "Plan, budget, schedule, and lead teams to delivery — both Waterfall and Agile." },
+    rating: 4.7, reviews: 4700, students: 16900, price: 1490, oldPrice: 3990, hours: 18, lectures: 125, level: "intermediate", bestseller: false, color: "from-blue-600 to-indigo-700",
+    learn: { th: ["วางแผนโครงการตั้งแต่ต้นจนจบ", "Agile และ Scrum ใช้จริง", "บริหารความเสี่ยงและงบ", "เครื่องมือ: Notion, Jira, Trello"], en: ["Plan projects end to end", "Agile & Scrum in practice", "Risk & budget management", "Tools: Notion, Jira, Trello"] },
+    sections: [
+      { title: { th: "รากฐานการบริหารโครงการ", en: "PM Foundations" }, lectures: [ { t: { th: "ขอบเขต เวลา งบประมาณ", en: "Scope, time, budget" }, m: 16 }, { t: { th: "แผนงานที่ทีมทำตามได้", en: "Plans teams can follow" }, m: 18 } ] },
+      { title: { th: "Agile ใช้จริง", en: "Agile in Practice" }, lectures: [ { t: { th: "Scrum ใน 1 บทเรียน", en: "Scrum in one lesson" }, m: 20 }, { t: { th: "Sprint แรกของทีมคุณ", en: "Your team's first sprint" }, m: 17 } ] },
+    ] },
+  { id: 38, cat: "biz", instructor: { th: "อ.ชลธิชา บุญมั่น", en: "Chonticha Boonman" },
+    title: { th: "ทักษะหัวหน้างานและภาวะผู้นำ", en: "Leadership & People Management" },
+    desc: { th: "จากคนเก่งงานสู่หัวหน้าที่ลูกทีมรัก: มอบหมายงาน ให้ฟีดแบ็ก และพัฒนาคน", en: "From great worker to great leader: delegation, feedback, and growing your people." },
+    rating: 4.6, reviews: 3400, students: 12100, price: 990, oldPrice: 2990, hours: 10, lectures: 70, level: "all", bestseller: false, color: "from-amber-600 to-yellow-500",
+    learn: { th: ["มอบหมายงานให้ได้ผล", "ให้ฟีดแบ็กที่คนรับฟัง", "ประชุม 1:1 อย่างมีคุณภาพ", "จัดการความขัดแย้งในทีม"], en: ["Delegation that works", "Feedback people hear", "Quality 1:1 meetings", "Handling team conflict"] },
+    sections: [
+      { title: { th: "บทบาทหัวหน้า", en: "The Leader's Role" }, lectures: [ { t: { th: "เปลี่ยนจากทำเองเป็นนำทีม", en: "From doing to leading" }, m: 13 }, { t: { th: "สร้างความไว้วางใจ", en: "Building trust" }, m: 12 } ] },
+      { title: { th: "เครื่องมือผู้นำ", en: "Leadership Tools" }, lectures: [ { t: { th: "สูตรฟีดแบ็กที่ได้ผล", en: "A feedback formula" }, m: 14 }, { t: { th: "1:1 ที่ลูกทีมตั้งตารอ", en: "1:1s people look forward to" }, m: 12 } ] },
+    ] },
+  // ---------- ออกแบบ (เพิ่ม) ----------
+  { id: 39, cat: "design", instructor: { th: "อ.ณิชา อารีวงศ์", en: "Nicha Areewong" },
+    title: { th: "Photoshop ครบทุกเครื่องมือ ใช้งานจริง", en: "Photoshop: Every Tool, Real Work" },
+    desc: { th: "รีทัชภาพ ตัดต่อ ทำกราฟิกโฆษณา และงาน AI ใน Photoshop รุ่นล่าสุด", en: "Retouching, compositing, ad graphics, and AI features in the latest Photoshop." },
+    rating: 4.7, reviews: 7600, students: 27400, price: 899, oldPrice: 2990, hours: 22, lectures: 155, level: "beginner", bestseller: true, color: "from-blue-800 to-sky-600",
+    learn: { th: ["เครื่องมือหลักครบทุกตัว", "รีทัชภาพบุคคลเนียนธรรมชาติ", "Generative Fill และ AI", "งานกราฟิกโฆษณาจริง"], en: ["All core tools", "Natural portrait retouching", "Generative Fill & AI", "Real ad graphics"] },
+    sections: [
+      { title: { th: "พื้นฐานที่ถูกต้อง", en: "The Right Foundations" }, lectures: [ { t: { th: "Layer และ Mask", en: "Layers & masks" }, m: 18 }, { t: { th: "Selection แม่นทุกเส้น", en: "Precise selections" }, m: 20 } ] },
+      { title: { th: "งานจริง", en: "Real Projects" }, lectures: [ { t: { th: "รีทัชภาพบุคคล", en: "Portrait retouching" }, m: 22 }, { t: { th: "โปสเตอร์โฆษณา 1 ชิ้น", en: "A finished ad poster" }, m: 19 } ] },
+    ] },
+  { id: 40, cat: "design", instructor: { th: "อ.พิมพ์ลภัส จันทร์เพ็ญ", en: "Pimlapas Chanpen" },
+    title: { th: "ตัดต่อวิดีโอ CapCut มือถือเครื่องเดียวจบ", en: "CapCut: Full Video Editing on Your Phone" },
+    desc: { th: "ตัดต่อคลิป TikTok/Reels ให้ปังด้วยมือถือ ใส่ซับ เอฟเฟกต์ และเทคนิคไวรัล", en: "Edit killer TikTok/Reels on your phone — captions, effects, and viral techniques." },
+    rating: 4.6, reviews: 9100, students: 35800, price: 399, oldPrice: 1490, hours: 8, lectures: 60, level: "beginner", bestseller: true, color: "from-zinc-900 to-zinc-600",
+    learn: { th: ["ตัดต่อพื้นฐานจนคล่อง", "ซับไตเติลอัตโนมัติสวย ๆ", "เอฟเฟกต์และทรานสิชันฮิต", "สูตรคลิปไวรัล 3 วิแรก"], en: ["Fluent basic editing", "Beautiful auto-captions", "Trending effects & transitions", "The 3-second hook formula"] },
+    sections: [
+      { title: { th: "ตัดต่อพื้นฐาน", en: "Editing Basics" }, lectures: [ { t: { th: "ตัด ต่อ เรียงคลิป", en: "Cut, trim, arrange" }, m: 11 }, { t: { th: "เสียงและเพลงประกอบ", en: "Audio & music" }, m: 12 } ] },
+      { title: { th: "ให้คลิปปัง", en: "Making It Pop" }, lectures: [ { t: { th: "ซับและสติกเกอร์", en: "Captions & stickers" }, m: 13 }, { t: { th: "สูตร 3 วินาทีแรก", en: "The first 3 seconds" }, m: 10 } ] },
+    ] },
+  { id: 41, cat: "design", instructor: { th: "อ.กมลชนก ศรีวิไล", en: "Kamonchanok Sriwilai" },
+    title: { th: "Premiere Pro ตัดต่อระดับมืออาชีพ", en: "Premiere Pro: Professional Editing" },
+    desc: { th: "ตัดต่องานลูกค้าจริง: หนังสั้น โฆษณา YouTube พร้อมเกรดสีและเสียงระดับสตูดิโอ", en: "Client-grade editing: short films, ads, YouTube — with studio color and sound." },
+    rating: 4.7, reviews: 4300, students: 15600, price: 1290, oldPrice: 3490, hours: 24, lectures: 165, level: "intermediate", bestseller: false, color: "from-violet-700 to-purple-900",
+    learn: { th: ["เวิร์กโฟลว์ตัดต่อมืออาชีพ", "เกรดสีให้ได้อารมณ์หนัง", "มิกซ์เสียงสะอาดคม", "ส่งออกทุกแพลตฟอร์มถูกสเปก"], en: ["Pro editing workflow", "Cinematic color grading", "Clean audio mixing", "Correct exports everywhere"] },
+    sections: [
+      { title: { th: "เวิร์กโฟลว์มือโปร", en: "Pro Workflow" }, lectures: [ { t: { th: "จัดโปรเจกต์และ proxy", en: "Projects & proxies" }, m: 17 }, { t: { th: "ตัดต่อจังหวะเล่าเรื่อง", en: "Editing for story rhythm" }, m: 21 } ] },
+      { title: { th: "สีและเสียง", en: "Color & Sound" }, lectures: [ { t: { th: "Lumetri เกรดสีจริง", en: "Grading with Lumetri" }, m: 20 }, { t: { th: "มิกซ์เสียงให้คม", en: "Mixing clean audio" }, m: 18 } ] },
+    ] },
+  { id: 42, cat: "design", instructor: { th: "อ.ณิชา อารีวงศ์", en: "Nicha Areewong" },
+    title: { th: "วาดภาพดิจิทัลด้วย Procreate", en: "Digital Painting with Procreate" },
+    desc: { th: "จาก iPad สู่ผลงานศิลปะ: เส้น สี แสงเงา และสไตล์ของตัวเองพร้อมขายงานได้", en: "From iPad to artwork: lines, color, light, and a personal style you can sell." },
+    rating: 4.8, reviews: 5200, students: 17800, price: 699, oldPrice: 2290, hours: 14, lectures: 95, level: "beginner", bestseller: false, color: "from-pink-400 to-rose-600",
+    learn: { th: ["คุมเส้นและ brush ให้อยู่มือ", "ทฤษฎีสีฉบับนักวาด", "แสงเงาที่ทำให้ภาพมีมิติ", "ทำสติกเกอร์และงานขาย"], en: ["Confident lines & brushes", "Color theory for artists", "Light & shadow with depth", "Stickers & sellable work"] },
+    sections: [
+      { title: { th: "จับดินสอให้มั่น", en: "Getting Comfortable" }, lectures: [ { t: { th: "แคนวาสและ brush", en: "Canvas & brushes" }, m: 12 }, { t: { th: "วาดเส้นให้นิ่ง", en: "Steady linework" }, m: 15 } ] },
+      { title: { th: "ลงสีและแสง", en: "Color & Light" }, lectures: [ { t: { th: "ลงสีเบื้องต้นถึงเบลนด์", en: "Flats to blending" }, m: 17 }, { t: { th: "แสงเงาสร้างมิติ", en: "Light that adds depth" }, m: 16 } ] },
+    ] },
+  { id: 43, cat: "design", instructor: { th: "อ.ปริญญ์ อินทรกำแหง", en: "Prin Intarakamhaeng" },
+    title: { th: "Blender ปั้นโมเดล 3D ฟรี ตั้งแต่ศูนย์", en: "Blender: Free 3D from Zero" },
+    desc: { th: "โปรแกรม 3D ฟรีที่สตูดิโอทั่วโลกใช้ ปั้นโมเดล ใส่วัสดุ จัดแสง และเรนเดอร์สวย", en: "The free 3D tool studios use worldwide — model, texture, light, and render beautifully." },
+    rating: 4.7, reviews: 3800, students: 13200, price: 1490, oldPrice: 3990, hours: 28, lectures: 190, level: "intermediate", bestseller: false, color: "from-orange-600 to-amber-700",
+    learn: { th: ["ปั้นโมเดลจากรูปทรงพื้นฐาน", "วัสดุและพื้นผิวสมจริง", "จัดแสงแบบสตูดิโอ", "เรนเดอร์ภาพนิ่งและแอนิเมชัน"], en: ["Model from primitives", "Realistic materials", "Studio lighting", "Stills & animation renders"] },
+    sections: [
+      { title: { th: "รู้จัก Blender", en: "Meet Blender" }, lectures: [ { t: { th: "หน้าจอและการควบคุม", en: "Interface & navigation" }, m: 16 }, { t: { th: "โมเดลชิ้นแรก", en: "Your first model" }, m: 22 } ] },
+      { title: { th: "สู่ภาพสวย", en: "To Beautiful Renders" }, lectures: [ { t: { th: "วัสดุและ UV", en: "Materials & UVs" }, m: 24 }, { t: { th: "แสงและเรนเดอร์", en: "Lighting & rendering" }, m: 21 } ] },
+    ] },
+  // ---------- การตลาด (เพิ่ม) ----------
+  { id: 44, cat: "mkt", instructor: { th: "อ.พิมพ์ลภัส จันทร์เพ็ญ", en: "Pimlapas Chanpen" },
+    title: { th: "TikTok Marketing ปั้นช่องให้ปังจากศูนย์", en: "TikTok Marketing: Grow from Zero" },
+    desc: { th: "เข้าใจอัลกอริทึม ทำคอนเทนต์ให้ถูกดัน และเปลี่ยนยอดวิวเป็นยอดขาย", en: "Understand the algorithm, make content it promotes, and turn views into sales." },
+    rating: 4.7, reviews: 7400, students: 28900, price: 699, oldPrice: 2290, hours: 10, lectures: 72, level: "beginner", bestseller: true, color: "from-fuchsia-500 to-pink-600",
+    learn: { th: ["อัลกอริทึมชอบคลิปแบบไหน", "คอนเทนต์ 5 สูตรที่เวิร์กเสมอ", "ตารางโพสต์และความถี่", "ต่อยอดวิวเป็นรายได้"], en: ["What the algorithm rewards", "5 content formats that work", "Posting cadence", "Monetizing your views"] },
+    sections: [
+      { title: { th: "เข้าใจแพลตฟอร์ม", en: "Understanding the Platform" }, lectures: [ { t: { th: "อัลกอริทึมทำงานยังไง", en: "How the algorithm works" }, m: 13 }, { t: { th: "หา niche ของช่องคุณ", en: "Finding your niche" }, m: 12 } ] },
+      { title: { th: "คอนเทนต์ที่ถูกดัน", en: "Content That Gets Pushed" }, lectures: [ { t: { th: "5 สูตรคลิปเวิร์กจริง", en: "5 proven formats" }, m: 15 }, { t: { th: "อ่านสถิติแล้วปรับ", en: "Reading analytics" }, m: 12 } ] },
+    ] },
+  { id: 45, cat: "mkt", instructor: { th: "อ.ชลธิชา บุญมั่น", en: "Chonticha Boonman" },
+    title: { th: "ยิงแอด Facebook และ IG ขั้นสูง", en: "Advanced Facebook & IG Ads" },
+    desc: { th: "โครงสร้างแคมเปญ กลุ่มเป้าหมาย งบ และการอ่านผลแบบมืออาชีพที่ทำ ROAS ได้จริง", en: "Campaign structure, audiences, budgets, and reading results for real ROAS." },
+    rating: 4.6, reviews: 5100, students: 18400, price: 1490, oldPrice: 3990, hours: 16, lectures: 115, level: "intermediate", bestseller: false, color: "from-blue-500 to-cyan-500",
+    learn: { th: ["โครงสร้างแคมเปญที่ scale ได้", "Custom/Lookalike Audience", "อ่านตัวเลขและ optimize", "Retargeting ปิดการขาย"], en: ["Scalable campaign structure", "Custom & lookalike audiences", "Reading metrics & optimizing", "Retargeting that closes"] },
+    sections: [
+      { title: { th: "โครงสร้างที่ถูกต้อง", en: "Correct Structure" }, lectures: [ { t: { th: "Campaign-AdSet-Ad", en: "Campaign, ad set, ad" }, m: 16 }, { t: { th: "ตั้งงบและ bidding", en: "Budgets & bidding" }, m: 15 } ] },
+      { title: { th: "Optimize จริง", en: "Real Optimization" }, lectures: [ { t: { th: "ตัวเลขไหนต้องดูทุกวัน", en: "Daily numbers to watch" }, m: 17 }, { t: { th: "Retargeting ครบสูตร", en: "Full retargeting playbook" }, m: 18 } ] },
+    ] },
+  { id: 46, cat: "mkt", instructor: { th: "อ.ศุภกร เมธาวี", en: "Supakorn Methawee" },
+    title: { th: "SEO เจาะลึก ติดหน้าแรก Google", en: "Deep SEO: Rank on Google Page One" },
+    desc: { th: "ครบทั้ง On-page, Technical และ Backlink พร้อมรับมือยุค AI Search", en: "On-page, technical, and backlinks — plus surviving the AI search era." },
+    rating: 4.6, reviews: 3700, students: 13900, price: 1290, oldPrice: 3490, hours: 15, lectures: 105, level: "intermediate", bestseller: false, color: "from-emerald-500 to-green-700",
+    learn: { th: ["หา keyword ที่แข่งไหวขายได้", "เขียนบทความติดอันดับ", "Technical SEO เช็กครบ", "SEO ยุค AI Overview"], en: ["Winnable, sellable keywords", "Articles that rank", "Full technical SEO checks", "SEO for the AI era"] },
+    sections: [
+      { title: { th: "Keyword และคอนเทนต์", en: "Keywords & Content" }, lectures: [ { t: { th: "วิจัย keyword จริง", en: "Real keyword research" }, m: 16 }, { t: { th: "โครงบทความติดอันดับ", en: "Rankable article structure" }, m: 15 } ] },
+      { title: { th: "Technical และลิงก์", en: "Technical & Links" }, lectures: [ { t: { th: "เช็กสุขภาพเว็บ", en: "Site health checks" }, m: 14 }, { t: { th: "สร้าง backlink ขาวสะอาด", en: "Clean backlink building" }, m: 16 } ] },
+    ] },
+  { id: 47, cat: "mkt", instructor: { th: "อ.ณิชา อารีวงศ์", en: "Nicha Areewong" },
+    title: { th: "สร้างแบรนด์ให้คนจดจำ Branding 101", en: "Branding 101: Be Remembered" },
+    desc: { th: "ตั้งแต่ชื่อ โลโก้ สี น้ำเสียง จนถึงประสบการณ์ลูกค้า ให้แบรนด์เล็กดูใหญ่", en: "Name, logo, colors, voice, and customer experience — make a small brand feel big." },
+    rating: 4.6, reviews: 3100, students: 11400, price: 990, oldPrice: 2990, hours: 12, lectures: 80, level: "beginner", bestseller: false, color: "from-amber-800 to-stone-600",
+    learn: { th: ["ตัวตนแบรนด์ที่ชัดเจน", "เลือกชื่อ สี ฟอนต์ อย่างมีเหตุผล", "น้ำเสียงแบรนด์ทุกช่องทาง", "Brand Guideline ฉบับใช้งาน"], en: ["A clear brand identity", "Names, colors, fonts with reason", "Consistent brand voice", "A working brand guideline"] },
+    sections: [
+      { title: { th: "ตัวตนแบรนด์", en: "Brand Identity" }, lectures: [ { t: { th: "แบรนด์คือความรู้สึก", en: "Brands are feelings" }, m: 12 }, { t: { th: "หา positioning ของคุณ", en: "Finding your positioning" }, m: 14 } ] },
+      { title: { th: "ลงมือสร้าง", en: "Building It" }, lectures: [ { t: { th: "ชื่อ โลโก้ สี", en: "Name, logo, colors" }, m: 16 }, { t: { th: "Guideline 1 หน้า", en: "The one-page guideline" }, m: 11 } ] },
+    ] },
+  // ---------- ภาษา (เพิ่ม) ----------
+  { id: 48, cat: "lang", instructor: { th: "เหล่าซือหลิน", en: "Laoshi Lin" },
+    title: { th: "ภาษาจีนพื้นฐาน ใช้ได้จริงในชีวิตประจำวัน", en: "Practical Chinese for Daily Life" },
+    desc: { th: "พินอิน โทนเสียง และประโยคใช้จริง สั่งอาหาร ช้อปปิ้ง เที่ยวจีนได้มั่นใจ", en: "Pinyin, tones, and real sentences — order food, shop, and travel with confidence." },
+    rating: 4.6, reviews: 4400, students: 16200, price: 499, oldPrice: 1790, hours: 20, lectures: 140, level: "beginner", bestseller: false, color: "from-red-500 to-amber-500",
+    learn: { th: ["พินอินและโทนเสียงแม่น", "ประโยคใช้จริง 300+ ประโยค", "ฟัง-พูดกับเจ้าของภาษา", "อ่านเมนูและป้ายพื้นฐาน"], en: ["Accurate pinyin & tones", "300+ real-life sentences", "Listening & speaking practice", "Reading menus & signs"] },
+    sections: [
+      { title: { th: "เสียงภาษาจีน", en: "Chinese Sounds" }, lectures: [ { t: { th: "พินอินครบระบบ", en: "The pinyin system" }, m: 18 }, { t: { th: "4 โทนเสียงให้แม่น", en: "Mastering the 4 tones" }, m: 16 } ] },
+      { title: { th: "พูดได้เลย", en: "Speak Right Away" }, lectures: [ { t: { th: "ทักทายและแนะนำตัว", en: "Greetings & introductions" }, m: 14 }, { t: { th: "สั่งอาหารและต่อราคา", en: "Ordering & bargaining" }, m: 15 } ] },
+    ] },
+  { id: 49, cat: "lang", instructor: { th: "อ.ยูกิ ทานากะ", en: "Yuki Tanaka" },
+    title: { th: "ภาษาญี่ปุ่นเริ่มต้น สอบผ่าน N5", en: "Beginner Japanese: Pass the N5" },
+    desc: { th: "ฮิรางานะ คาตาคานะ ไวยากรณ์ N5 และบทสนทนาใช้จริงเมื่อไปญี่ปุ่น", en: "Hiragana, katakana, N5 grammar, and conversations for your Japan trip." },
+    rating: 4.7, reviews: 5600, students: 19800, price: 499, oldPrice: 1790, hours: 22, lectures: 150, level: "beginner", bestseller: false, color: "from-rose-400 to-red-600",
+    learn: { th: ["อ่านเขียนคานะครบ 2 ชุด", "ไวยากรณ์ N5 ทุกหัวข้อ", "คำศัพท์สอบ 800 คำ", "บทสนทนาเที่ยวญี่ปุ่น"], en: ["Read & write both kana", "All N5 grammar points", "800 exam vocabulary words", "Japan travel conversations"] },
+    sections: [
+      { title: { th: "อ่านเขียนให้ได้", en: "Reading & Writing" }, lectures: [ { t: { th: "ฮิรางานะใน 3 วัน", en: "Hiragana in 3 days" }, m: 20 }, { t: { th: "คาตาคานะและคำทับศัพท์", en: "Katakana & loanwords" }, m: 18 } ] },
+      { title: { th: "ไวยากรณ์ N5", en: "N5 Grammar" }, lectures: [ { t: { th: "ประโยคพื้นฐาน です/ます", en: "Basic desu/masu sentences" }, m: 17 }, { t: { th: "คำช่วยที่ต้องรู้", en: "Essential particles" }, m: 19 } ] },
+    ] },
+  { id: 50, cat: "lang", instructor: { th: "อ.มินจี คิม", en: "Minji Kim" },
+    title: { th: "ภาษาเกาหลีสำหรับมือใหม่", en: "Korean for Absolute Beginners" },
+    desc: { th: "อ่านฮันกึลได้ใน 1 สัปดาห์ พูดประโยคใช้จริง ดูซีรีส์รู้เรื่องขึ้น", en: "Read hangul in a week, speak real sentences, and understand more K-dramas." },
+    rating: 4.6, reviews: 4900, students: 17600, price: 499, oldPrice: 1790, hours: 18, lectures: 125, level: "beginner", bestseller: false, color: "from-sky-500 to-indigo-400",
+    learn: { th: ["อ่านฮันกึลได้จริงใน 7 วัน", "ประโยคใช้บ่อยในชีวิตจริง", "ระดับความสุภาพที่ต้องรู้", "ศัพท์จากซีรีส์และเพลง"], en: ["Read hangul in 7 days", "Everyday sentences", "Politeness levels", "Vocab from dramas & K-pop"] },
+    sections: [
+      { title: { th: "ฮันกึล 7 วัน", en: "Hangul in 7 Days" }, lectures: [ { t: { th: "พยัญชนะและสระ", en: "Consonants & vowels" }, m: 16 }, { t: { th: "ประสมคำอ่านจริง", en: "Combining & reading" }, m: 15 } ] },
+      { title: { th: "พูดเกาหลี", en: "Speaking Korean" }, lectures: [ { t: { th: "ทักทายและแนะนำตัว", en: "Greetings & introductions" }, m: 13 }, { t: { th: "สั่งอาหารสไตล์เกาหลี", en: "Ordering Korean food" }, m: 12 } ] },
+    ] },
+  { id: 51, cat: "lang", instructor: { th: "T.Sarah Mitchell", en: "Sarah Mitchell" },
+    title: { th: "พิชิต TOEIC 700+ ใน 8 สัปดาห์", en: "TOEIC 700+ in 8 Weeks" },
+    desc: { th: "เทคนิคทำข้อสอบทุกพาร์ต แกรมมาร์ที่ออกบ่อย และข้อสอบจำลองพร้อมเฉลยละเอียด", en: "Techniques for every part, high-frequency grammar, and full mock tests with detailed keys." },
+    rating: 4.7, reviews: 6300, students: 22700, price: 899, oldPrice: 2790, hours: 16, lectures: 110, level: "intermediate", bestseller: true, color: "from-blue-700 to-blue-500",
+    learn: { th: ["เทคนิคทำเร็วทุกพาร์ต", "แกรมมาร์ออกสอบบ่อยสุด", "ศัพท์ TOEIC 1,000 คำ", "ข้อสอบจำลอง 3 ชุดเต็ม"], en: ["Speed techniques per part", "Most-tested grammar", "1,000 TOEIC words", "3 full mock tests"] },
+    sections: [
+      { title: { th: "Listening ให้ได้คะแนน", en: "Scoring in Listening" }, lectures: [ { t: { th: "Part 1-2 เทคนิคตัดช้อยส์", en: "Parts 1-2 elimination" }, m: 15 }, { t: { th: "Part 3-4 ฟังจับประเด็น", en: "Parts 3-4 key listening" }, m: 18 } ] },
+      { title: { th: "Reading ทันเวลา", en: "Beating the Clock in Reading" }, lectures: [ { t: { th: "Part 5 แกรมมาร์เร็ว", en: "Part 5 fast grammar" }, m: 17 }, { t: { th: "Part 7 อ่านแบบ scan", en: "Part 7 scanning" }, m: 19 } ] },
+    ] },
+  // ---------- การเงิน (เพิ่ม) ----------
+  { id: 52, cat: "fin", instructor: { th: "อ.ปกรณ์ เศรษฐวัฒน์", en: "Pakorn Setthawat" },
+    title: { th: "วางแผนการเงินส่วนบุคคล มีเงินเก็บจริง", en: "Personal Finance: Actually Save Money" },
+    desc: { th: "จัดการเงินเดือนให้อยู่ ปลดหนี้ สร้างเงินสำรอง และวางเป้าหมายการเงินที่ทำได้จริง", en: "Manage your paycheck, clear debt, build a safety net, and set achievable money goals." },
+    rating: 4.7, reviews: 6700, students: 24800, price: 599, oldPrice: 1990, hours: 10, lectures: 68, level: "beginner", bestseller: true, color: "from-emerald-600 to-teal-500",
+    learn: { th: ["สูตรแบ่งเงินเดือนที่เวิร์ก", "แผนปลดหนี้ทีละก้อน", "เงินสำรองฉุกเฉิน 6 เดือน", "เป้าหมายเงินล้านแรก"], en: ["A paycheck split that works", "Step-by-step debt payoff", "A 6-month emergency fund", "Your first million plan"] },
+    sections: [
+      { title: { th: "จัดการเงินเดือน", en: "Managing Your Paycheck" }, lectures: [ { t: { th: "รู้จักเงินเข้า-ออกตัวเอง", en: "Know your cash flow" }, m: 12 }, { t: { th: "สูตรแบ่งเงิน 50/30/20", en: "The 50/30/20 rule" }, m: 13 } ] },
+      { title: { th: "หนี้และเงินเก็บ", en: "Debt & Savings" }, lectures: [ { t: { th: "ปลดหนี้แบบ snowball", en: "Snowball debt payoff" }, m: 14 }, { t: { th: "เงินสำรองฉุกเฉิน", en: "Emergency funds" }, m: 11 } ] },
+    ] },
+  { id: 53, cat: "fin", instructor: { th: "อ.ปกรณ์ เศรษฐวัฒน์", en: "Pakorn Setthawat" },
+    title: { th: "กองทุนรวมฉบับเข้าใจง่าย เริ่มได้ทันที", en: "Mutual Funds Made Simple" },
+    desc: { th: "เลือกกองทุนเป็น เข้าใจค่าธรรมเนียม DCA อย่างถูกวิธี และลดหย่อนภาษีด้วย SSF/RMF (เนื้อหาเพื่อการศึกษา)", en: "Pick funds wisely, understand fees, DCA properly, and use tax-advantaged funds (educational content)." },
+    rating: 4.6, reviews: 4100, students: 15700, price: 499, oldPrice: 1790, hours: 8, lectures: 56, level: "beginner", bestseller: false, color: "from-green-600 to-lime-500",
+    learn: { th: ["ประเภทกองทุนและความเสี่ยง", "อ่าน fund fact sheet เป็น", "DCA สม่ำเสมออย่างถูกวิธี", "SSF/RMF ลดหย่อนภาษี"], en: ["Fund types & risk levels", "Reading fund fact sheets", "Proper DCA habits", "Tax-advantaged funds"] },
+    sections: [
+      { title: { th: "รู้จักกองทุนรวม", en: "Understanding Funds" }, lectures: [ { t: { th: "กองทุนคืออะไร เหมาะกับใคร", en: "What funds are & who they suit" }, m: 12 }, { t: { th: "ความเสี่ยง 8 ระดับ", en: "The 8 risk levels" }, m: 13 } ] },
+      { title: { th: "เริ่มลงทุน", en: "Getting Started" }, lectures: [ { t: { th: "เลือกกองแรกของคุณ", en: "Choosing your first fund" }, m: 14 }, { t: { th: "DCA และการติดตามผล", en: "DCA & tracking" }, m: 12 } ] },
+    ] },
+  { id: 54, cat: "fin", instructor: { th: "อ.ปกรณ์ เศรษฐวัฒน์", en: "Pakorn Setthawat" },
+    title: { th: "ภาษีบุคคลธรรมดา ยื่นเองได้ ลดหย่อนเป็น", en: "Personal Income Tax: File It Yourself" },
+    desc: { th: "เข้าใจโครงสร้างภาษี ใช้สิทธิลดหย่อนครบ และยื่นภาษีออนไลน์ด้วยตัวเองแบบไม่งง", en: "Understand tax brackets, claim every deduction, and confidently e-file yourself." },
+    rating: 4.6, reviews: 3500, students: 13100, price: 399, oldPrice: 1490, hours: 6, lectures: 42, level: "all", bestseller: false, color: "from-cyan-700 to-teal-800",
+    learn: { th: ["โครงสร้างภาษีแบบขั้นบันได", "ลดหย่อนครบทุกสิทธิ", "ยื่นออนไลน์ทีละขั้น", "วางแผนภาษีปีหน้า"], en: ["How tax brackets work", "Every deduction you can claim", "Step-by-step e-filing", "Planning next year's tax"] },
+    sections: [
+      { title: { th: "เข้าใจภาษีเงินได้", en: "Income Tax Basics" }, lectures: [ { t: { th: "ขั้นบันไดภาษีคำนวณเอง", en: "Calculating your bracket" }, m: 12 }, { t: { th: "รายการลดหย่อนทั้งหมด", en: "All available deductions" }, m: 14 } ] },
+      { title: { th: "ยื่นจริง", en: "Filing for Real" }, lectures: [ { t: { th: "ยื่นออนไลน์ทีละหน้าจอ", en: "E-filing screen by screen" }, m: 13 }, { t: { th: "เช็กก่อนกดส่ง", en: "Pre-submit checklist" }, m: 8 } ] },
+    ] },
+];
 
-let state = { query:'', page:1, totalPages:1 };
+// ป้ายชื่อโปรแกรมสไตล์ 3D บนภาพปกคอร์ส (ใช้ตัวอักษร ไม่ใช้โลโก้จริงเพื่อเลี่ยงปัญหาเครื่องหมายการค้า)
+const LOGOS = {
+  1: "Py", 2: "React", 3: "MKT", 4: "Excel", 5: "Figma", 6: "ENG", 7: "หุ้น", 8: "SQL",
+  9: "GPT", 10: "Claude", 11: "Gemini", 12: "Copilot", 13: "MJ", 14: "SD", 15: "Canva",
+  16: "Sora", 17: "Voice", 18: "Suno", 19: "Prompt", 20: "n8n", 21: "Cursor", 22: "AI MKT",
+  23: "AI Data", 24: "NLM", 25: "Bot", 26: "ML", 27: "DS", 28: "AI Law",
+  29: "JS", 30: "Flutter", 31: "Node", 32: "Git", 33: "Cyber",
+  34: "Startup", 35: "Shop", 36: "ACC", 37: "PM", 38: "Lead",
+  39: "Ps", 40: "CapCut", 41: "Pr", 42: "Draw", 43: "3D",
+  44: "TikTok", 45: "Ads", 46: "SEO", 47: "Brand",
+  48: "中文", 49: "日本語", 50: "한국어", 51: "TOEIC",
+  52: "฿", 53: "Fund", 54: "TAX",
+};
 
-function esc(s){
-  return String(s ?? '').replace(/[&<>"']/g,
-    c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+// ---------- ส่วนประกอบย่อย ----------
+function GoogleG() {
+  return (
+    <svg viewBox="0 0 48 48" className="w-5 h-5" aria-hidden="true">
+      <path fill="#FFC107" d="M43.6 20.1H42V20H24v8h11.3C33.7 32.7 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.2 6.1 29.3 4 24 4 13 4 4 13 4 24s9 20 20 20 20-9 20-20c0-1.3-.1-2.7-.4-3.9z"/>
+      <path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.9 1.2 8 3l5.7-5.7C34.2 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/>
+      <path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.3 0-9.7-3.3-11.3-8l-6.5 5C9.5 39.6 16.2 44 24 44z"/>
+      <path fill="#1976D2" d="M43.6 20.1H42V20H24v8h11.3c-.8 2.2-2.2 4.1-4.1 5.5l6.2 5.2C41 35.4 44 30.2 44 24c0-1.3-.1-2.7-.4-3.9z"/>
+    </svg>
+  );
+}
+function Stars({ rating }) {
+  const full = Math.floor(rating);
+  const half = rating - full >= 0.5;
+  return (
+    <span className="inline-flex items-center gap-0.5">
+      {[...Array(full)].map((_, i) => <Star key={i} className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />)}
+      {half && <StarHalf className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />}
+    </span>
+  );
 }
 
-function showLoading(){
-  pager.hidden = true;
-  out.innerHTML = '<div class="status"><div class="compass"></div>กำลังออกเรือค้นหา…</div>';
-}
+// ---------- แอปหลัก ----------
+function App() {
+  const [lang, setLang] = useState("th");
+  const [langOpen, setLangOpen] = useState(false);
+  const [page, setPage] = useState("home");
+  const [course, setCourse] = useState(null);
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("all");
+  const [cart, setCart] = useState([]);
+  const [user, setUser] = useState(null);
+  const [enrolled, setEnrolled] = useState([]);
+  const [done, setDone] = useState({});
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState("login");
+  const [authName, setAuthName] = useState("");
+  const [authEmail, setAuthEmail] = useState("");
+  const [openSec, setOpenSec] = useState([0]);
+  const [current, setCurrent] = useState("0-0");
+  const [toast, setToast] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [accountOpen, setAccountOpen] = useState(false);
+  const [payMethod, setPayMethod] = useState("card");
+  const [card, setCard] = useState({ num: "", name: "", exp: "", cvv: "" });
+  const [paying, setPaying] = useState(false);
+  const [payDone, setPayDone] = useState(false);
 
-function showError(msg){
-  pager.hidden = true;
-  out.innerHTML = '<div class="status error">' + esc(msg) + '</div>';
-}
+  const t = T[lang];
+  // เนื้อหาคอร์สมีแค่ th/en — ภาษาอื่น fallback เป็น en
+  const L = (obj) => obj[lang] ?? obj.en ?? obj.th;
+  const fmt = (n) => n.toLocaleString(LOCALES[lang]);
+  const catName = (id) => { const c = CATEGORIES.find(x => x.id === id); return c ? c[lang] : id; };
 
-async function search(query, page){
-  showLoading();
-  state.query = query; state.page = page;
-  try{
-    const url = BASE + '?name=' + encodeURIComponent(query) + '&page=' + page;
-    const res = await fetch(url, { headers:{ 'x-api-key': API_KEY } });
-    if(res.status === 401 || res.status === 403){
-      showError('API key ไม่ผ่านการตรวจสอบ (HTTP ' + res.status + ') — ลองเช็ค key ในหน้า Platform อีกครั้ง');
-      return;
+  const showToast = (msg) => { setToast(msg); setTimeout(() => setToast(""), 2200); };
+
+  // ติดตามสถานะล็อกอิน Google (คงอยู่แม้รีเฟรชหน้า)
+  useEffect(() => {
+    getRedirectResult(auth).catch(() => {});
+    const unsub = onAuthStateChanged(auth, (u) => {
+      if (u) {
+        setUser({
+          name: u.displayName || (u.email ? u.email.split("@")[0] : "User"),
+          email: u.email || "",
+          photo: u.photoURL || null,
+          google: true,
+        });
+      } else {
+        setUser(prev => (prev && prev.google ? null : prev));
+      }
+    });
+    return unsub;
+  }, []);
+
+  const googleLogin = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+      setAuthOpen(false); setAccountOpen(false);
+      showToast(t.toastLogin);
+    } catch (err) {
+      if (err && (err.code === "auth/popup-blocked" || err.code === "auth/popup-closed-by-user" || err.code === "auth/cancelled-popup-request")) {
+        if (err.code === "auth/popup-blocked") {
+          try { await signInWithRedirect(auth, provider); } catch (e) {}
+        }
+      } else {
+        showToast("Google login: " + (err && err.code ? err.code : "error"));
+      }
     }
-    if(!res.ok){
-      showError('เซิร์ฟเวอร์ตอบกลับผิดปกติ (HTTP ' + res.status + ')');
-      return;
-    }
-    const json = await res.json();
-    const cards = json.data || [];
-    state.totalPages = json.totalPages || 1;
-    render(cards, json.total);
-  }catch(err){
-    showError('เชื่อมต่อ API ไม่ได้ — อาจติด CORS เมื่อเรียกจากเบราว์เซอร์โดยตรง ถ้าเจอปัญหานี้ต้องเรียกผ่าน backend/proxy ของเราเอง (' + err.message + ')');
-  }
-}
+  };
 
-function render(cards, total){
-  if(!cards.length){
-    showError('ไม่พบการ์ดชื่อ "' + state.query + '" — ลองสะกดแบบอื่นดูครับ');
-    return;
-  }
-  const html = cards.map(c => {
-    const img = c.images?.small || c.images?.large || '';
-    const rarity = c.rarity || '—';
-    const code = c.code || c.id || '';
-    const setName = c.set?.name || '';
-    const power = c.power && c.power !== '-' ? 'PWR ' + esc(c.power) : '';
-    const cost = c.cost && c.cost !== '-' ? 'COST ' + esc(c.cost) : '';
-    return `
-    <div class="card">
-      <div class="wanted">WANTED</div>
-      ${img ? `<img src="${esc(img)}" alt="${esc(c.name)}" loading="lazy">` : ''}
-      <div class="name">${esc(c.name)}</div>
-      <div class="meta">${esc(code)}${setName ? ' · ' + esc(setName) : ''}</div>
-      <div class="foot">
-        <span class="stamp">${esc(rarity)}</span>
-        <span class="power">${power || cost}</span>
+  const handleLogout = () => {
+    signOut(auth).catch(() => {});
+    setUser(null); setPage("home");
+  };
+
+  const filtered = useMemo(() => COURSES.filter(c => {
+    const hay = (c.title.th + c.title.en + c.instructor.th + c.instructor.en + catName(c.cat)).toLowerCase();
+    return (category === "all" || c.cat === category) &&
+      (search.trim() === "" || hay.includes(search.toLowerCase()));
+  }), [search, category, lang]);
+
+  const openCourse = (c) => { setCourse(c); setOpenSec([0]); setPage("detail"); window.scrollTo(0, 0); };
+  const inCart = (id) => cart.some(c => c.id === id);
+  const isEnrolled = (id) => enrolled.includes(id);
+
+  const addToCart = (c) => {
+    if (inCart(c.id)) { setPage("cart"); return; }
+    setCart([...cart, c]); showToast(t.toastCart);
+  };
+
+  const checkout = () => {
+    if (!user) { setAuthOpen(true); return; }
+    setPayDone(false); setPaying(false); setPage("checkout"); window.scrollTo(0, 0);
+  };
+
+  const formatCardNum = (v) => v.replace(/\D/g, "").slice(0, 16).replace(/(.{4})/g, "$1 ").trim();
+  const formatExp = (v) => {
+    const d = v.replace(/\D/g, "").slice(0, 4);
+    return d.length > 2 ? d.slice(0, 2) + "/" + d.slice(2) : d;
+  };
+
+  const completePayment = () => {
+    if (paying) return;
+    if (payMethod === "card") {
+      const numOk = card.num.replace(/\s/g, "").length === 16;
+      const expOk = /^\d{2}\/\d{2}$/.test(card.exp);
+      if (!numOk || !card.name.trim() || !expOk || card.cvv.length < 3) { showToast(t.invalidCard); return; }
+    }
+    setPaying(true);
+    setTimeout(() => {
+      setEnrolled(prev => [...prev, ...cart.map(c => c.id).filter(id => !prev.includes(id))]);
+      setCart([]); setPaying(false); setPayDone(true);
+      setCard({ num: "", name: "", exp: "", cvv: "" });
+    }, 1800);
+  };
+
+  const enrollFree = (c) => {
+    if (!user) { setAuthOpen(true); return; }
+    if (!isEnrolled(c.id)) setEnrolled([...enrolled, c.id]);
+    startLearn(c);
+  };
+
+  const startLearn = (c) => { setCourse(c); setCurrent("0-0"); setOpenSec([0]); setPage("learn"); window.scrollTo(0, 0); };
+
+  const submitAuth = (e) => {
+    e.preventDefault();
+    if (!authEmail.trim()) return;
+    setUser({ name: authMode === "signup" ? (authName || t.newUser) : authEmail.split("@")[0], email: authEmail });
+    setAuthOpen(false); setAuthName(""); setAuthEmail("");
+    showToast(authMode === "signup" ? t.toastSignup : t.toastLogin);
+  };
+
+  const toggleDone = (cid, key) => {
+    const cur = done[cid] || [];
+    setDone({ ...done, [cid]: cur.includes(key) ? cur.filter(k => k !== key) : [...cur, key] });
+  };
+
+  const progress = (c) => {
+    const total = c.sections.reduce((s, sec) => s + sec.lectures.length, 0);
+    const d = (done[c.id] || []).length;
+    return total ? Math.round((d / total) * 100) : 0;
+  };
+
+  const totalPrice = cart.reduce((s, c) => s + c.price, 0);
+  const totalOld = cart.reduce((s, c) => s + c.oldPrice, 0);
+
+  const Thumb = ({ c, className = "" }) => {
+    const logo = LOGOS[c.id];
+    return (
+      <div className={`bg-gradient-to-br ${c.color} flex items-center justify-center relative overflow-hidden ${className}`}>
+        <div className="absolute top-0 left-0 right-0 h-1/2 bg-white opacity-10" />
+        <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-black opacity-10 rounded-full" />
+        {logo ? (
+          <span className="relative font-black text-white tracking-tight select-none"
+            style={{
+              fontSize: logo.length <= 3 ? "1.8rem" : logo.length <= 6 ? "1.35rem" : "1.05rem",
+              textShadow: "0 2px 0 rgba(255,255,255,0.30), 0 5px 10px rgba(0,0,0,0.45), 0 10px 20px rgba(0,0,0,0.30)",
+              transform: "perspective(240px) rotateX(14deg)",
+            }}>
+            {logo}
+          </span>
+        ) : (
+          <PlayCircle className="w-10 h-10 text-white opacity-80" />
+        )}
+        {c.bestseller && (
+          <span className="absolute top-2 left-2 bg-amber-300 text-amber-900 text-xs font-bold px-1.5 py-0.5 rounded">{t.bestseller}</span>
+        )}
       </div>
-    </div>`;
-  }).join('');
-  out.innerHTML = '<div class="grid">' + html + '</div>';
-  pageLabel.textContent = 'หน้า ' + state.page + ' / ' + state.totalPages +
-    (total ? ' (' + total + ' ใบ)' : '');
-  prevBtn.disabled = state.page <= 1;
-  nextBtn.disabled = state.page >= state.totalPages;
-  pager.hidden = false;
+    );
+  };
+
+  const Card = ({ c }) => (
+    <button onClick={() => openCourse(c)} className="text-left bg-white rounded-lg border border-zinc-200 overflow-hidden hover:shadow-lg transition-shadow group flex sm:block">
+      <Thumb c={c} className="w-28 shrink-0 sm:w-full sm:h-32" />
+      <div className="p-3 flex-1 min-w-0">
+        <h3 className="font-bold text-sm text-zinc-900 leading-snug line-clamp-2 group-hover:text-violet-700">{L(c.title)}</h3>
+        <p className="text-xs text-zinc-500 mt-1">{L(c.instructor)}</p>
+        <div className="flex items-center gap-1.5 mt-1.5">
+          <span className="text-sm font-bold text-amber-700">{c.rating}</span>
+          <Stars rating={c.rating} />
+          <span className="text-xs text-zinc-400">({fmt(c.reviews)})</span>
+        </div>
+        <div className="flex items-baseline gap-2 mt-1.5">
+          <span className="font-extrabold text-zinc-900">฿{fmt(c.price)}</span>
+          <span className="text-xs text-zinc-400 line-through">฿{fmt(c.oldPrice)}</span>
+        </div>
+      </div>
+    </button>
+  );
+
+  // ---------- Header ----------
+  const Header = (
+    <header className="sticky top-0 z-40 bg-white border-b border-zinc-200 shadow-sm">
+      <div className="max-w-6xl mx-auto px-3 py-2.5 flex items-center gap-2 sm:gap-3">
+        <button onClick={() => setPage("home")} className="flex items-center gap-1 shrink-0">
+          <div className="w-8 h-8 rounded-lg bg-violet-700 text-white font-black flex items-center justify-center text-lg">ส</div>
+          <span className="font-extrabold text-lg text-zinc-900 hidden sm:inline">{t.brand}</span>
+        </button>
+        <div className="flex-1 relative hidden sm:block">
+          <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); if (page !== "home") setPage("home"); }}
+            placeholder={t.search}
+            className="w-full bg-zinc-100 border border-zinc-200 rounded-full pl-9 pr-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 focus:bg-white"
+          />
+        </div>
+        <div className="flex-1 sm:hidden" />
+
+        {/* ปุ่มเลือกภาษา */}
+        <div className="relative shrink-0">
+          <button onClick={(e) => { e.stopPropagation(); setLangOpen(!langOpen); setMenuOpen(false); }}
+            className="flex items-center gap-1 border border-zinc-300 rounded-full px-2.5 py-1.5 text-sm font-bold hover:border-zinc-900"
+            aria-label="Change language">
+            <Languages className="w-4 h-4" />
+            <span className="hidden sm:inline">{LANG_LIST.find(l => l.code === lang)?.label}</span>
+            <span className="sm:hidden uppercase">{lang}</span>
+          </button>
+          {langOpen && (
+            <div className="absolute right-0 top-11 bg-white border border-zinc-200 rounded-lg shadow-xl w-36 py-1 z-50">
+              {LANG_LIST.map(l => (
+                <button key={l.code} onClick={() => { setLang(l.code); setLangOpen(false); }}
+                  className={`w-full text-left px-4 py-2 text-sm hover:bg-zinc-50 ${lang === l.code ? "font-bold text-violet-700 bg-violet-50" : ""}`}>
+                  {l.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        <button onClick={() => setPage("cart")} className="relative p-2 shrink-0 hidden sm:block" aria-label={t.cartTitle}>
+          <ShoppingCart className="w-5 h-5 text-zinc-700" />
+          {cart.length > 0 && <span className="absolute -top-0.5 -right-0.5 bg-violet-700 text-white text-xs font-bold w-5 h-5 rounded-full flex items-center justify-center">{cart.length}</span>}
+        </button>
+        {user ? (
+          <button onClick={(e) => { e.stopPropagation(); setMenuOpen(!menuOpen); setLangOpen(false); }}
+            className="w-8 h-8 rounded-full bg-zinc-900 text-white text-sm font-bold hidden sm:flex items-center justify-center shrink-0 overflow-hidden">
+            {user.photo ? <img src={user.photo} alt="" className="w-8 h-8 object-cover" referrerPolicy="no-referrer" /> : user.name[0].toUpperCase()}
+          </button>
+        ) : (
+          <div className="hidden sm:flex gap-1.5 shrink-0">
+            <button onClick={() => { setAuthMode("login"); setAuthOpen(true); }} className="text-sm font-bold border border-zinc-900 px-3 py-1.5 rounded hover:bg-zinc-100">{t.login}</button>
+            <button onClick={() => { setAuthMode("signup"); setAuthOpen(true); }} className="text-sm font-bold bg-zinc-900 text-white px-3 py-1.5 rounded hover:bg-zinc-700 hidden md:block">{t.signup}</button>
+          </div>
+        )}
+      </div>
+      {/* ช่องค้นหาสำหรับมือถือ */}
+      <div className="px-3 pb-2.5 sm:hidden">
+        <div className="relative">
+          <Search className="w-4 h-4 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            id="search-mobile"
+            value={search}
+            onChange={(e) => { setSearch(e.target.value); if (page !== "home") setPage("home"); }}
+            placeholder={t.search}
+            className="w-full bg-zinc-100 border border-zinc-200 rounded-full pl-9 pr-3 py-2.5 text-base focus:outline-none focus:ring-2 focus:ring-violet-500 focus:bg-white"
+          />
+        </div>
+      </div>
+      {user && menuOpen && (
+        <div className="absolute right-3 top-14 bg-white border border-zinc-200 rounded-lg shadow-xl w-56 py-2 z-50">
+          <div className="px-4 py-2 border-b border-zinc-100">
+            <p className="font-bold text-sm">{user.name}</p>
+            <p className="text-xs text-zinc-500 truncate">{user.email}</p>
+          </div>
+          <button onClick={() => { setPage("mylearning"); setMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm hover:bg-zinc-50">{t.myCourses}</button>
+          <button onClick={() => { handleLogout(); setMenuOpen(false); }} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-zinc-50">{t.logout}</button>
+        </div>
+      )}
+    </header>
+  );
+
+  // ---------- หน้าแรก ----------
+  const Home = (
+    <div>
+      <section className="bg-zinc-900 text-white">
+        <div className="max-w-6xl mx-auto px-4 py-10 sm:py-14">
+          <p className="text-violet-300 font-bold text-sm tracking-wide">{t.heroTag}</p>
+          <h1 className="text-3xl sm:text-4xl font-extrabold mt-2 leading-tight">{t.heroTitle1}<br />{t.heroTitle2}</h1>
+          <p className="text-zinc-300 mt-3 max-w-xl">{t.heroSub}</p>
+          <div className="flex flex-wrap gap-6 mt-6 text-sm">
+            <span className="flex items-center gap-2"><Users className="w-4 h-4 text-violet-300" /> {t.statStudents}</span>
+            <span className="flex items-center gap-2"><Award className="w-4 h-4 text-violet-300" /> {t.statCert}</span>
+            <span className="flex items-center gap-2"><Globe className="w-4 h-4 text-violet-300" /> {t.statDevices}</span>
+          </div>
+        </div>
+      </section>
+
+      <div className="max-w-6xl mx-auto px-4 py-6">
+        <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
+          {CATEGORIES.map(cat => (
+            <button key={cat.id} onClick={() => setCategory(cat.id)}
+              className={`shrink-0 px-4 py-1.5 rounded-full text-sm font-bold border transition-colors ${category === cat.id ? "bg-zinc-900 text-white border-zinc-900" : "bg-white text-zinc-700 border-zinc-300 hover:border-zinc-900"}`}>
+              {cat[lang]}
+            </button>
+          ))}
+        </div>
+
+        <h2 className="font-extrabold text-xl text-zinc-900 mt-5 mb-3">
+          {search ? `${t.searchFor} "${search}"` : category === "all" ? t.recommended : `${t.catCourses}${catName(category)}`}
+          <span className="text-sm font-normal text-zinc-500 ml-2">{filtered.length} {t.coursesUnit}</span>
+        </h2>
+
+        {filtered.length === 0 ? (
+          <div className="text-center py-16 text-zinc-500">
+            <Search className="w-10 h-10 mx-auto mb-3 text-zinc-300" />
+            <p className="font-bold text-zinc-700">{t.noCourse}</p>
+            <p className="text-sm mt-1">{t.noCourseSub}</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
+            {filtered.map(c => <Card key={c.id} c={c} />)}
+          </div>
+        )}
+      </div>
+
+      <footer className="bg-zinc-900 text-zinc-400 text-sm mt-10">
+        <div className="max-w-6xl mx-auto px-4 py-8 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <span className="font-bold text-white">{t.footer}</span>
+          <div className="flex items-center gap-2">
+            <Languages className="w-4 h-4" />
+            {LANG_LIST.map(l => (
+              <button key={l.code} onClick={() => setLang(l.code)}
+                className={`hover:text-white ${lang === l.code ? "text-white font-bold underline" : ""}`}>{l.label}</button>
+            ))}
+          </div>
+        </div>
+      </footer>
+    </div>
+  );
+
+  // ---------- หน้ารายละเอียดคอร์ส ----------
+  const Detail = course && (
+    <div className="pb-24 sm:pb-0">
+      <div className="bg-zinc-900 text-white">
+        <div className="max-w-6xl mx-auto px-4 py-6">
+          <button onClick={() => setPage("home")} className="flex items-center gap-1 text-sm text-zinc-300 hover:text-white mb-3">
+            <ArrowLeft className="w-4 h-4" /> {t.back}
+          </button>
+          <p className="text-violet-300 text-sm font-bold">{catName(course.cat)}</p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold mt-1">{L(course.title)}</h1>
+          <p className="text-zinc-300 mt-2 max-w-2xl">{L(course.desc)}</p>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3 text-sm">
+            {course.bestseller && <span className="bg-amber-300 text-amber-900 text-xs font-bold px-2 py-0.5 rounded">{t.bestseller}</span>}
+            <span className="flex items-center gap-1"><span className="font-bold text-amber-400">{course.rating}</span><Stars rating={course.rating} /><span className="text-zinc-400">({fmt(course.reviews)} {t.reviewsUnit})</span></span>
+            <span className="text-zinc-300">{fmt(course.students)} {t.studentsUnit}</span>
+          </div>
+          <p className="text-sm text-zinc-400 mt-1">{t.taughtBy} <span className="text-violet-300 font-bold">{L(course.instructor)}</span></p>
+        </div>
+      </div>
+
+      <div className="max-w-6xl mx-auto px-4 py-6 grid lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2 space-y-6">
+          <div className="border border-zinc-200 rounded-lg p-4">
+            <h2 className="font-extrabold text-lg mb-3">{t.whatLearn}</h2>
+            <ul className="grid sm:grid-cols-2 gap-2">
+              {L(course.learn).map((l, i) => (
+                <li key={i} className="flex gap-2 text-sm text-zinc-700"><CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />{l}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div>
+            <h2 className="font-extrabold text-lg mb-1">{t.courseContent}</h2>
+            <p className="text-sm text-zinc-500 mb-3">{course.sections.length} {t.chaptersUnit} • {course.lectures} {t.lecturesUnit} • {course.hours} {t.hoursUnit}</p>
+            <div className="border border-zinc-200 rounded-lg divide-y divide-zinc-200 overflow-hidden">
+              {course.sections.map((sec, si) => (
+                <div key={si}>
+                  <button onClick={() => setOpenSec(openSec.includes(si) ? openSec.filter(x => x !== si) : [...openSec, si])}
+                    className="w-full flex items-center justify-between px-4 py-3 bg-zinc-50 hover:bg-zinc-100 text-left">
+                    <span className="font-bold text-sm">{L(sec.title)}</span>
+                    <span className="flex items-center gap-2 text-xs text-zinc-500">
+                      {sec.lectures.length} {t.lecturesUnit}
+                      {openSec.includes(si) ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                    </span>
+                  </button>
+                  {openSec.includes(si) && sec.lectures.map((lec, li) => (
+                    <div key={li} className="flex items-center justify-between px-4 py-2.5 text-sm bg-white">
+                      <span className="flex items-center gap-2 text-zinc-700"><Play className="w-3.5 h-3.5 text-zinc-400" />{L(lec.t)}</span>
+                      <span className="text-xs text-zinc-400">{lec.m} {t.minUnit}</span>
+                    </div>
+                  ))}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:col-span-1">
+          <div className="border border-zinc-200 rounded-lg overflow-hidden shadow-lg lg:sticky lg:top-20 bg-white">
+            <Thumb c={course} className="h-36 w-full" />
+            <div className="p-4">
+              {isEnrolled(course.id) ? (
+                <>
+                  <p className="text-sm text-emerald-700 font-bold flex items-center gap-1 mb-3"><BadgeCheck className="w-4 h-4" /> {t.own}</p>
+                  <button onClick={() => startLearn(course)} className="w-full bg-violet-700 hover:bg-violet-800 text-white font-bold py-3 rounded-lg">{t.continueLearn}</button>
+                </>
+              ) : (
+                <>
+                  <div className="flex items-baseline gap-2 flex-wrap">
+                    <span className="text-3xl font-extrabold">฿{fmt(course.price)}</span>
+                    <span className="text-zinc-400 line-through">฿{fmt(course.oldPrice)}</span>
+                    <span className="text-red-600 text-sm font-bold">{Math.round((1 - course.price / course.oldPrice) * 100)}% {t.discountTag}</span>
+                  </div>
+                  <button onClick={() => addToCart(course)} className="w-full bg-violet-700 hover:bg-violet-800 text-white font-bold py-3 rounded-lg mt-4">
+                    {inCart(course.id) ? t.goCart : t.addCart}
+                  </button>
+                  <button onClick={() => enrollFree(course)} className="w-full border border-zinc-900 font-bold py-3 rounded-lg mt-2 hover:bg-zinc-50">{t.tryDemo}</button>
+                </>
+              )}
+              <ul className="mt-4 space-y-1.5 text-sm text-zinc-600">
+                <li className="flex gap-2"><Clock className="w-4 h-4 mt-0.5 text-zinc-400" />{t.video} {course.hours} {t.hoursUnit}</li>
+                <li className="flex gap-2"><FileText className="w-4 h-4 mt-0.5 text-zinc-400" />{course.lectures} {t.lecturesUnit} • {t.levelLabel}{t.levels[course.level]}</li>
+                <li className="flex gap-2"><Globe className="w-4 h-4 mt-0.5 text-zinc-400" />{t.lifetime}</li>
+                <li className="flex gap-2"><Award className="w-4 h-4 mt-0.5 text-zinc-400" />{t.cert}</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* แถบซื้อคอร์สติดด้านล่าง (มือถือ) */}
+      {!isEnrolled(course.id) && (
+        <div className="sm:hidden fixed bottom-16 left-0 right-0 bg-white border-t border-zinc-200 px-3 py-2.5 flex items-center gap-3 z-30 shadow-lg">
+          <div className="shrink-0">
+            <p className="font-extrabold text-lg leading-tight">฿{fmt(course.price)}</p>
+            <p className="text-xs text-zinc-400 line-through leading-tight">฿{fmt(course.oldPrice)}</p>
+          </div>
+          <button onClick={() => addToCart(course)} className="flex-1 bg-violet-700 active:bg-violet-800 text-white font-bold py-3 rounded-lg text-sm">
+            {inCart(course.id) ? t.goCart : t.addCart}
+          </button>
+        </div>
+      )}
+      {isEnrolled(course.id) && (
+        <div className="sm:hidden fixed bottom-16 left-0 right-0 bg-white border-t border-zinc-200 px-3 py-2.5 z-30 shadow-lg">
+          <button onClick={() => startLearn(course)} className="w-full bg-violet-700 active:bg-violet-800 text-white font-bold py-3 rounded-lg text-sm">
+            {t.continueLearn}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+
+  // ---------- หน้าเรียน ----------
+  const Learn = course && (() => {
+    const [si, li] = current.split("-").map(Number);
+    const lec = course.sections[si]?.lectures[li];
+    const flat = [];
+    course.sections.forEach((sec, s) => sec.lectures.forEach((l, i) => flat.push(`${s}-${i}`)));
+    const idx = flat.indexOf(current);
+    const pct = progress(course);
+    return (
+      <div className="max-w-6xl mx-auto lg:px-4 lg:py-4 grid lg:grid-cols-3 gap-4">
+        <div className="lg:col-span-2">
+          <div className="bg-black aspect-video flex flex-col items-center justify-center text-white relative lg:rounded-lg overflow-hidden">
+            <div className={`absolute inset-0 bg-gradient-to-br ${course.color} opacity-30`} />
+            <Play className="w-16 h-16 text-white relative" />
+            <p className="relative mt-3 font-bold px-4 text-center">{lec && L(lec.t)}</p>
+            <p className="relative text-sm text-zinc-300">{t.mockVideo} • {lec?.m} {t.minUnit}</p>
+          </div>
+          <div className="px-4 lg:px-0 py-3">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h1 className="font-extrabold text-lg leading-snug">{lec && L(lec.t)}</h1>
+                <p className="text-sm text-zinc-500 mt-0.5">{L(course.title)}</p>
+              </div>
+              <button onClick={() => toggleDone(course.id, current)}
+                className={`shrink-0 text-sm font-bold px-3 py-2 rounded-lg border ${((done[course.id]) || []).includes(current) ? "bg-emerald-600 text-white border-emerald-600" : "border-zinc-300 hover:border-zinc-900"}`}>
+                {((done[course.id]) || []).includes(current) ? t.doneMark : t.markDone}
+              </button>
+            </div>
+            <div className="flex gap-2 mt-3">
+              <button disabled={idx <= 0} onClick={() => setCurrent(flat[idx - 1])}
+                className="flex-1 border border-zinc-300 rounded-lg py-2 text-sm font-bold disabled:opacity-40 hover:border-zinc-900">{t.prev}</button>
+              <button disabled={idx >= flat.length - 1}
+                onClick={() => {
+                  const cur = done[course.id] || [];
+                  if (!cur.includes(current)) setDone({ ...done, [course.id]: [...cur, current] });
+                  setCurrent(flat[idx + 1]);
+                }}
+                className="flex-1 bg-violet-700 text-white rounded-lg py-2 text-sm font-bold disabled:opacity-40 hover:bg-violet-800">{t.next}</button>
+            </div>
+          </div>
+        </div>
+
+        <div className="lg:col-span-1 px-4 lg:px-0 pb-6">
+          <div className="border border-zinc-200 rounded-lg overflow-hidden">
+            <div className="p-3 bg-zinc-50 border-b border-zinc-200">
+              <div className="flex justify-between text-sm font-bold"><span>{t.progressLabel}</span><span>{pct}%</span></div>
+              <div className="h-2 bg-zinc-200 rounded-full mt-2 overflow-hidden">
+                <div className="h-full bg-violet-700 rounded-full transition-all" style={{ width: `${pct}%` }} />
+              </div>
+            </div>
+            <div className="max-h-96 overflow-y-auto divide-y divide-zinc-100">
+              {course.sections.map((sec, s) => (
+                <div key={s}>
+                  <p className="px-3 py-2 text-xs font-bold text-zinc-500 bg-zinc-50 uppercase">{t.chapterN} {s + 1}: {L(sec.title)}</p>
+                  {sec.lectures.map((l, i) => {
+                    const key = `${s}-${i}`;
+                    const active = key === current;
+                    const fin = ((done[course.id]) || []).includes(key);
+                    return (
+                      <button key={key} onClick={() => setCurrent(key)}
+                        className={`w-full flex items-center gap-2 px-3 py-2.5 text-left text-sm ${active ? "bg-violet-50 border-l-4 border-violet-700" : "hover:bg-zinc-50 border-l-4 border-transparent"}`}>
+                        {fin ? <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" /> : <Circle className="w-4 h-4 text-zinc-300 shrink-0" />}
+                        <span className={`flex-1 ${active ? "font-bold text-violet-900" : "text-zinc-700"}`}>{L(l.t)}</span>
+                        <span className="text-xs text-zinc-400">{l.m} {t.minShort}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  })();
+
+  // ---------- ตะกร้า ----------
+  const Cart = (
+    <div className="max-w-3xl mx-auto px-4 py-6">
+      <h1 className="text-2xl font-extrabold">{t.cartTitle}</h1>
+      <p className="text-sm text-zinc-500 mt-1">{cart.length} {t.inCartUnit}</p>
+      {cart.length === 0 ? (
+        <div className="text-center py-16 border border-dashed border-zinc-300 rounded-lg mt-4">
+          <ShoppingCart className="w-10 h-10 mx-auto text-zinc-300 mb-3" />
+          <p className="font-bold text-zinc-700">{t.emptyCart}</p>
+          <button onClick={() => setPage("home")} className="mt-4 bg-violet-700 text-white font-bold px-5 py-2.5 rounded-lg hover:bg-violet-800">{t.browse}</button>
+        </div>
+      ) : (
+        <>
+          <div className="divide-y divide-zinc-200 border border-zinc-200 rounded-lg mt-4 overflow-hidden">
+            {cart.map(c => (
+              <div key={c.id} className="flex gap-3 p-3 bg-white">
+                <Thumb c={c} className="w-24 h-16 rounded shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <button onClick={() => openCourse(c)} className="font-bold text-sm text-left leading-snug hover:text-violet-700 line-clamp-2">{L(c.title)}</button>
+                  <p className="text-xs text-zinc-500 mt-0.5">{L(c.instructor)}</p>
+                  <button onClick={() => setCart(cart.filter(x => x.id !== c.id))} className="text-xs text-red-600 font-bold mt-1 flex items-center gap-1"><Trash2 className="w-3 h-3" /> {t.remove}</button>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="font-extrabold">฿{fmt(c.price)}</p>
+                  <p className="text-xs text-zinc-400 line-through">฿{fmt(c.oldPrice)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="border border-zinc-200 rounded-lg p-4 mt-4 bg-zinc-50">
+            <div className="flex justify-between text-sm text-zinc-600"><span>{t.normalPrice}</span><span className="line-through">฿{fmt(totalOld)}</span></div>
+            <div className="flex justify-between text-sm text-red-600 font-bold mt-1"><span>{t.discountLabel}</span><span>-฿{fmt(totalOld - totalPrice)}</span></div>
+            <div className="flex justify-between text-xl font-extrabold mt-2 pt-2 border-t border-zinc-200"><span>{t.total}</span><span>฿{fmt(totalPrice)}</span></div>
+            <button onClick={checkout} className="w-full bg-violet-700 hover:bg-violet-800 text-white font-bold py-3 rounded-lg mt-4">
+              {user ? t.payDemo : t.loginToPay}
+            </button>
+            <p className="text-xs text-zinc-400 text-center mt-2">{t.demoNote}</p>
+          </div>
+        </>
+      )}
+    </div>
+  );
+
+  // ---------- หน้าชำระเงิน (จำลอง) ----------
+  const inputCls = "w-full border border-zinc-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-violet-500";
+  const Checkout = (
+    <div className="max-w-lg mx-auto px-4 py-6 pb-24 sm:pb-10">
+      {payDone ? (
+        <div className="text-center py-14">
+          <CheckCircle2 className="w-16 h-16 text-emerald-600 mx-auto" />
+          <h1 className="text-2xl font-extrabold mt-4">{t.paySuccess}</h1>
+          <p className="text-zinc-500 mt-2">{t.paySuccessSub}</p>
+          <button onClick={() => setPage("mylearning")} className="mt-6 bg-violet-700 hover:bg-violet-800 text-white font-bold px-6 py-3 rounded-lg">{t.goLearn}</button>
+        </div>
+      ) : (
+        <>
+          <button onClick={() => setPage("cart")} className="flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-900 mb-3">
+            <ArrowLeft className="w-4 h-4" /> {t.backToCart}
+          </button>
+          <h1 className="text-2xl font-extrabold">{t.payTitle}</h1>
+
+          <div className="bg-amber-50 border border-amber-300 text-amber-800 text-sm font-bold rounded-lg p-3 mt-3">
+            ⚠️ {t.demoPayNote}
+          </div>
+
+          <div className="border border-zinc-200 rounded-lg p-4 mt-4">
+            <h2 className="font-bold text-sm text-zinc-500 uppercase mb-2">{t.orderSummary}</h2>
+            {cart.map(c => (
+              <div key={c.id} className="flex justify-between text-sm py-1">
+                <span className="text-zinc-700 line-clamp-1 pr-3">{L(c.title)}</span>
+                <span className="font-bold shrink-0">฿{fmt(c.price)}</span>
+              </div>
+            ))}
+            <div className="flex justify-between font-extrabold text-lg mt-2 pt-2 border-t border-zinc-200">
+              <span>{t.total}</span><span>฿{fmt(totalPrice)}</span>
+            </div>
+          </div>
+
+          <h2 className="font-bold mt-5 mb-2">{t.payMethodLabel}</h2>
+          <div className="grid grid-cols-2 gap-2">
+            <button onClick={() => setPayMethod("card")}
+              className={`flex items-center justify-center gap-2 py-3 rounded-lg border text-sm font-bold ${payMethod === "card" ? "border-violet-700 bg-violet-50 text-violet-800" : "border-zinc-300 text-zinc-600"}`}>
+              <CreditCard className="w-4 h-4" /> {t.cardMethod}
+            </button>
+            <button onClick={() => setPayMethod("qr")}
+              className={`flex items-center justify-center gap-2 py-3 rounded-lg border text-sm font-bold ${payMethod === "qr" ? "border-violet-700 bg-violet-50 text-violet-800" : "border-zinc-300 text-zinc-600"}`}>
+              <QrCode className="w-4 h-4" /> {t.promptpay}
+            </button>
+          </div>
+
+          {payMethod === "card" ? (
+            <div className="mt-4 space-y-3">
+              <input value={card.num} onChange={e => setCard({ ...card, num: formatCardNum(e.target.value) })}
+                placeholder={t.cardNumber + " (0000 0000 0000 0000)"} inputMode="numeric" className={inputCls} />
+              <input value={card.name} onChange={e => setCard({ ...card, name: e.target.value })}
+                placeholder={t.cardName} className={inputCls} />
+              <div className="grid grid-cols-2 gap-3">
+                <input value={card.exp} onChange={e => setCard({ ...card, exp: formatExp(e.target.value) })}
+                  placeholder={t.expiry} inputMode="numeric" className={inputCls} />
+                <input value={card.cvv} onChange={e => setCard({ ...card, cvv: e.target.value.replace(/\D/g, "").slice(0, 4) })}
+                  placeholder={t.cvvLabel} inputMode="numeric" type="password" className={inputCls} />
+              </div>
+              <button onClick={() => setCard({ num: "4242 4242 4242 4242", name: "DEMO USER", exp: "12/29", cvv: "123" })}
+                className="text-sm text-violet-700 font-bold">✨ {t.useTestCard}</button>
+            </div>
+          ) : (
+            <div className="mt-4 border border-zinc-200 rounded-lg p-6 text-center">
+              <div className="w-40 h-40 mx-auto bg-white border-4 border-zinc-900 rounded-lg flex items-center justify-center">
+                <QrCode className="w-28 h-28 text-zinc-900" />
+              </div>
+              <p className="text-sm text-zinc-500 mt-3">{t.scanQr}</p>
+              <p className="font-extrabold text-lg mt-1">฿{fmt(totalPrice)}</p>
+            </div>
+          )}
+
+          <button onClick={completePayment} disabled={paying}
+            className="w-full bg-violet-700 hover:bg-violet-800 disabled:opacity-60 text-white font-bold py-4 rounded-lg mt-5 flex items-center justify-center gap-2">
+            {paying ? (<><Loader2 className="w-5 h-5 animate-spin" /> {t.processing}</>) : (payMethod === "card" ? `${t.payNow} — ฿${fmt(totalPrice)}` : t.confirmPaid)}
+          </button>
+          <p className="text-xs text-zinc-400 text-center mt-2 flex items-center justify-center gap-1"><Lock className="w-3 h-3" /> {t.secureNote}</p>
+        </>
+      )}
+    </div>
+  );
+
+  // ---------- คอร์สของฉัน ----------
+  const myCourses = COURSES.filter(c => enrolled.includes(c.id));
+  const MyLearning = (
+    <div className="max-w-6xl mx-auto px-4 py-6">
+      <h1 className="text-2xl font-extrabold">{t.myCourses}</h1>
+      {myCourses.length === 0 ? (
+        <div className="text-center py-16 border border-dashed border-zinc-300 rounded-lg mt-4">
+          <PlayCircle className="w-10 h-10 mx-auto text-zinc-300 mb-3" />
+          <p className="font-bold text-zinc-700">{t.noEnrolled}</p>
+          <p className="text-sm text-zinc-500 mt-1">{t.noEnrolledSub}</p>
+          <button onClick={() => setPage("home")} className="mt-4 bg-violet-700 text-white font-bold px-5 py-2.5 rounded-lg hover:bg-violet-800">{t.findCourse}</button>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
+          {myCourses.map(c => {
+            const pct = progress(c);
+            return (
+              <button key={c.id} onClick={() => startLearn(c)} className="text-left border border-zinc-200 rounded-lg overflow-hidden hover:shadow-lg transition-shadow bg-white">
+                <Thumb c={c} className="h-28 w-full" />
+                <div className="p-3">
+                  <h3 className="font-bold text-sm leading-snug line-clamp-2">{L(c.title)}</h3>
+                  <p className="text-xs text-zinc-500 mt-1">{L(c.instructor)}</p>
+                  <div className="h-1.5 bg-zinc-200 rounded-full mt-3 overflow-hidden">
+                    <div className="h-full bg-violet-700 rounded-full" style={{ width: `${pct}%` }} />
+                  </div>
+                  <p className="text-xs text-zinc-500 mt-1">{pct === 0 ? t.start : pct === 100 ? t.finishedAll : `${t.learned} ${pct}%`}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+
+  // ---------- Modal สมัคร/ล็อกอิน ----------
+  const AuthModal = authOpen && (
+    <div className="fixed inset-0 z-50 bg-black flex items-center justify-center p-4 bg-opacity-50" onClick={() => setAuthOpen(false)}>
+      <div className="bg-white rounded-xl w-full max-w-sm p-6 relative" onClick={e => e.stopPropagation()}>
+        <button onClick={() => setAuthOpen(false)} className="absolute top-3 right-3 p-1 text-zinc-400 hover:text-zinc-900" aria-label="close"><X className="w-5 h-5" /></button>
+        <h2 className="text-xl font-extrabold">{authMode === "login" ? t.loginTitle : t.signupTitle}</h2>
+        <p className="text-sm text-zinc-500 mt-1">{t.authNote}</p>
+        <button onClick={googleLogin} className="w-full border border-zinc-300 rounded-lg py-3 font-bold flex items-center justify-center gap-2 hover:bg-zinc-50 mt-4">
+          <GoogleG /> {t.googleBtn}
+        </button>
+        <div className="flex items-center gap-3 mt-4">
+          <div className="flex-1 h-px bg-zinc-200" />
+          <span className="text-xs text-zinc-400">{t.orWord}</span>
+          <div className="flex-1 h-px bg-zinc-200" />
+        </div>
+        <div className="mt-4 space-y-3">
+          {authMode === "signup" && (
+            <input value={authName} onChange={e => setAuthName(e.target.value)} placeholder={t.yourName}
+              className="w-full border border-zinc-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" />
+          )}
+          <input value={authEmail} onChange={e => setAuthEmail(e.target.value)} type="email" placeholder={t.email}
+            className="w-full border border-zinc-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" />
+          <input type="password" placeholder={t.password}
+            className="w-full border border-zinc-300 rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-violet-500" />
+          <button onClick={submitAuth} className="w-full bg-violet-700 hover:bg-violet-800 text-white font-bold py-3 rounded-lg">
+            {authMode === "login" ? t.doLogin : t.doSignup}
+          </button>
+        </div>
+        <p className="text-sm text-center mt-4 text-zinc-500">
+          {authMode === "login" ? t.noAccount : t.haveAccount}
+          <button onClick={() => setAuthMode(authMode === "login" ? "signup" : "login")} className="text-violet-700 font-bold">
+            {authMode === "login" ? t.signup : t.doLogin}
+          </button>
+        </p>
+      </div>
+    </div>
+  );
+
+  // ---------- แถบเมนูล่าง (มือถือ) ----------
+  const BottomNav = (
+    <nav className="sm:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-zinc-200 z-40 grid grid-cols-5">
+      {[
+        { k: "home", icon: HomeIcon, label: t.navHome, act: () => { setPage("home"); window.scrollTo(0, 0); } },
+        { k: "searchtab", icon: Search, label: t.navSearch, act: () => { setPage("home"); setTimeout(() => { const el = document.getElementById("search-mobile"); if (el) { el.focus(); window.scrollTo(0, 0); } }, 60); } },
+        { k: "mylearning", icon: PlayCircle, label: t.navLearn, act: () => setPage("mylearning") },
+        { k: "cart", icon: ShoppingCart, label: t.navCart, act: () => setPage("cart"), badge: cart.length },
+        { k: "account", icon: UserCircle, label: t.navAccount, act: () => setAccountOpen(true) },
+      ].map(item => {
+        const active = page === item.k;
+        const Icon = item.icon;
+        return (
+          <button key={item.k} onClick={item.act} className="flex flex-col items-center justify-center gap-0.5 py-1.5 relative">
+            <span className="relative">
+              <Icon className={`w-5 h-5 ${active ? "text-violet-700" : "text-zinc-500"}`} />
+              {item.badge > 0 && (
+                <span className="absolute -top-1.5 -right-2 bg-violet-700 text-white text-xs font-bold w-4 h-4 rounded-full flex items-center justify-center">{item.badge}</span>
+              )}
+            </span>
+            <span className={`text-xs leading-none w-full text-center truncate px-0.5 ${active ? "text-violet-700 font-bold" : "text-zinc-500"}`}>{item.label}</span>
+          </button>
+        );
+      })}
+    </nav>
+  );
+
+  // ---------- แผงบัญชีแบบเลื่อนขึ้น (มือถือ) ----------
+  const AccountSheet = accountOpen && (
+    <div className="fixed inset-0 z-50 sm:hidden" onClick={() => setAccountOpen(false)}>
+      <div className="absolute inset-0 bg-black bg-opacity-50" />
+      <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl p-5 pb-8" onClick={e => e.stopPropagation()}>
+        <div className="w-10 h-1 bg-zinc-300 rounded-full mx-auto mb-4" />
+        {user ? (
+          <>
+            <div className="flex items-center gap-3 pb-4 border-b border-zinc-100">
+              <div className="w-11 h-11 rounded-full bg-zinc-900 text-white font-bold flex items-center justify-center text-lg overflow-hidden">
+                {user.photo ? <img src={user.photo} alt="" className="w-11 h-11 object-cover" referrerPolicy="no-referrer" /> : user.name[0].toUpperCase()}
+              </div>
+              <div className="min-w-0">
+                <p className="font-bold">{user.name}</p>
+                <p className="text-sm text-zinc-500 truncate">{user.email}</p>
+              </div>
+            </div>
+            <button onClick={() => { setPage("mylearning"); setAccountOpen(false); }} className="w-full text-left py-3.5 font-bold border-b border-zinc-100">{t.myCourses}</button>
+            <button onClick={() => { handleLogout(); setAccountOpen(false); }} className="w-full text-left py-3.5 font-bold text-red-600">{t.logout}</button>
+          </>
+        ) : (
+          <>
+            <h2 className="font-extrabold text-lg mb-4">{t.account}</h2>
+            <button onClick={googleLogin} className="w-full border border-zinc-300 font-bold py-3.5 rounded-lg flex items-center justify-center gap-2 mb-2"><GoogleG /> {t.googleBtn}</button>
+            <button onClick={() => { setAuthMode("login"); setAuthOpen(true); setAccountOpen(false); }} className="w-full bg-violet-700 text-white font-bold py-3.5 rounded-lg">{t.login}</button>
+            <button onClick={() => { setAuthMode("signup"); setAuthOpen(true); setAccountOpen(false); }} className="w-full border border-zinc-900 font-bold py-3.5 rounded-lg mt-2">{t.signup}</button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="min-h-screen bg-white text-zinc-900 pb-16 sm:pb-0"
+      style={{ fontFamily: "'Noto Sans Thai', 'Noto Sans SC', 'Noto Sans JP', 'Sarabun', system-ui, sans-serif" }}
+      onClick={() => { if (menuOpen) setMenuOpen(false); if (langOpen) setLangOpen(false); }}>
+      {Header}
+      {page === "home" && Home}
+      {page === "detail" && Detail}
+      {page === "learn" && Learn}
+      {page === "cart" && Cart}
+      {page === "checkout" && Checkout}
+      {page === "mylearning" && MyLearning}
+      {AuthModal}
+      {BottomNav}
+      {AccountSheet}
+      {toast && (
+        <div className="fixed bottom-20 sm:bottom-5 left-1/2 -translate-x-1/2 bg-zinc-900 text-white text-sm font-bold px-4 py-2.5 rounded-full shadow-lg z-50 whitespace-nowrap">
+          {toast}
+        </div>
+      )}
+    </div>
+  );
 }
 
-document.getElementById('go').addEventListener('click', () => {
-  const q = input.value.trim();
-  if(q) search(q, 1);
-});
-input.addEventListener('keydown', e => {
-  if(e.key === 'Enter'){
-    const q = input.value.trim();
-    if(q) search(q, 1);
-  }
-});
-prevBtn.addEventListener('click', () => search(state.query, state.page - 1));
-nextBtn.addEventListener('click', () => search(state.query, state.page + 1));
-</script>
+
+createRoot(document.getElementById("root")).render(<App />);
+  </script>
 </body>
 </html>
