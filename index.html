@@ -22,7 +22,8 @@ import { createRoot } from "https://esm.sh/react-dom@18.3.1/client";
 import {
   Search, ShoppingCart, Star, StarHalf, Play, ChevronDown, ChevronUp,
   Clock, Users, Globe, Award, CheckCircle2, Circle, X, ArrowLeft,
-  PlayCircle, FileText, BadgeCheck, Trash2, Languages, Home as HomeIcon, UserCircle
+  PlayCircle, FileText, BadgeCheck, Trash2, Languages, Home as HomeIcon, UserCircle,
+  CreditCard, QrCode, Lock, Loader2
 } from "https://esm.sh/lucide-react@0.383.0?deps=react@18.3.1";
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -82,6 +83,15 @@ const T = {
     navHome: "หน้าแรก", navSearch: "ค้นหา", navLearn: "ของฉัน", navCart: "ตะกร้า", navAccount: "บัญชี",
     account: "บัญชีของฉัน", close: "ปิด",
     googleBtn: "เข้าสู่ระบบด้วย Google", orWord: "หรือ",
+    payTitle: "ชำระเงิน", payMethodLabel: "เลือกวิธีชำระเงิน", cardMethod: "บัตรเครดิต/เดบิต",
+    promptpay: "พร้อมเพย์ (QR)", cardNumber: "หมายเลขบัตร", cardName: "ชื่อบนบัตร",
+    expiry: "หมดอายุ (ดด/ปป)", cvvLabel: "CVV", useTestCard: "กรอกบัตรทดสอบให้ฉัน",
+    payNow: "ชำระเงินตอนนี้", processing: "กำลังดำเนินการ...",
+    demoPayNote: "โหมดทดสอบ — ไม่มีการตัดเงินจริง ห้ามกรอกเลขบัตรจริงของคุณ",
+    orderSummary: "สรุปคำสั่งซื้อ", paySuccess: "ชำระเงินสำเร็จ!",
+    paySuccessSub: "คอร์สถูกเพิ่มใน \"คอร์สของฉัน\" เรียบร้อยแล้ว", goLearn: "ไปที่คอร์สของฉัน",
+    scanQr: "สแกน QR ด้วยแอปธนาคาร (จำลอง)", confirmPaid: "ยืนยันการชำระเงิน (จำลอง)",
+    invalidCard: "กรุณากรอกข้อมูลบัตรให้ครบถ้วน", backToCart: "กลับไปตะกร้า", secureNote: "การเชื่อมต่อจำลองความปลอดภัย",
   },
   en: {
     brand: "SkillDee", search: "Search for courses...", login: "Log in", signup: "Sign up free",
@@ -115,6 +125,15 @@ const T = {
     navHome: "Home", navSearch: "Search", navLearn: "Learning", navCart: "Cart", navAccount: "Account",
     account: "My account", close: "Close",
     googleBtn: "Continue with Google", orWord: "or",
+    payTitle: "Checkout", payMethodLabel: "Payment method", cardMethod: "Credit/Debit card",
+    promptpay: "PromptPay (QR)", cardNumber: "Card number", cardName: "Name on card",
+    expiry: "Expiry (MM/YY)", cvvLabel: "CVV", useTestCard: "Fill test card for me",
+    payNow: "Pay now", processing: "Processing...",
+    demoPayNote: "Test mode — no real charges. Do not enter a real card number.",
+    orderSummary: "Order summary", paySuccess: "Payment successful!",
+    paySuccessSub: "Courses have been added to My learning.", goLearn: "Go to My learning",
+    scanQr: "Scan QR with your banking app (demo)", confirmPaid: "Confirm payment (demo)",
+    invalidCard: "Please complete your card details", backToCart: "Back to cart", secureNote: "Simulated secure connection",
   },
   zh: {
     brand: "SkillDee", search: "搜索课程...", login: "登录", signup: "免费注册",
@@ -148,6 +167,15 @@ const T = {
     navHome: "首页", navSearch: "搜索", navLearn: "课程", navCart: "购物车", navAccount: "账户",
     account: "我的账户", close: "关闭",
     googleBtn: "使用 Google 登录", orWord: "或",
+    payTitle: "结算", payMethodLabel: "支付方式", cardMethod: "信用卡/借记卡",
+    promptpay: "PromptPay（二维码）", cardNumber: "卡号", cardName: "持卡人姓名",
+    expiry: "有效期（MM/YY）", cvvLabel: "CVV", useTestCard: "自动填入测试卡",
+    payNow: "立即支付", processing: "处理中...",
+    demoPayNote: "测试模式 — 不会真实扣款，请勿输入真实卡号。",
+    orderSummary: "订单摘要", paySuccess: "支付成功！",
+    paySuccessSub: "课程已添加到我的课程。", goLearn: "前往我的课程",
+    scanQr: "用银行App扫码（演示）", confirmPaid: "确认支付（演示）",
+    invalidCard: "请填写完整的卡片信息", backToCart: "返回购物车", secureNote: "模拟安全连接",
   },
   ja: {
     brand: "SkillDee", search: "コースを検索...", login: "ログイン", signup: "無料登録",
@@ -181,6 +209,15 @@ const T = {
     navHome: "ホーム", navSearch: "検索", navLearn: "学習", navCart: "カート", navAccount: "アカウント",
     account: "アカウント", close: "閉じる",
     googleBtn: "Google でログイン", orWord: "または",
+    payTitle: "お支払い", payMethodLabel: "お支払い方法", cardMethod: "クレジット/デビットカード",
+    promptpay: "PromptPay（QR）", cardNumber: "カード番号", cardName: "カード名義",
+    expiry: "有効期限（MM/YY）", cvvLabel: "CVV", useTestCard: "テストカードを自動入力",
+    payNow: "支払う", processing: "処理中...",
+    demoPayNote: "テストモード — 実際の請求はありません。実在のカード番号は入力しないでください。",
+    orderSummary: "ご注文内容", paySuccess: "お支払い完了！",
+    paySuccessSub: "コースがマイコースに追加されました。", goLearn: "マイコースへ",
+    scanQr: "銀行アプリでQRをスキャン（デモ）", confirmPaid: "支払いを確認（デモ）",
+    invalidCard: "カード情報をすべて入力してください", backToCart: "カートに戻る", secureNote: "セキュア接続（デモ）",
   },
 };
 
@@ -443,6 +480,10 @@ function App() {
   const [toast, setToast] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [accountOpen, setAccountOpen] = useState(false);
+  const [payMethod, setPayMethod] = useState("card");
+  const [card, setCard] = useState({ num: "", name: "", exp: "", cvv: "" });
+  const [paying, setPaying] = useState(false);
+  const [payDone, setPayDone] = useState(false);
 
   const t = T[lang];
   // เนื้อหาคอร์สมีแค่ th/en — ภาษาอื่น fallback เป็น en
@@ -509,8 +550,28 @@ function App() {
 
   const checkout = () => {
     if (!user) { setAuthOpen(true); return; }
-    setEnrolled([...enrolled, ...cart.map(c => c.id).filter(id => !enrolled.includes(id))]);
-    setCart([]); setPage("mylearning"); showToast(t.toastPay);
+    setPayDone(false); setPaying(false); setPage("checkout"); window.scrollTo(0, 0);
+  };
+
+  const formatCardNum = (v) => v.replace(/\D/g, "").slice(0, 16).replace(/(.{4})/g, "$1 ").trim();
+  const formatExp = (v) => {
+    const d = v.replace(/\D/g, "").slice(0, 4);
+    return d.length > 2 ? d.slice(0, 2) + "/" + d.slice(2) : d;
+  };
+
+  const completePayment = () => {
+    if (paying) return;
+    if (payMethod === "card") {
+      const numOk = card.num.replace(/\s/g, "").length === 16;
+      const expOk = /^\d{2}\/\d{2}$/.test(card.exp);
+      if (!numOk || !card.name.trim() || !expOk || card.cvv.length < 3) { showToast(t.invalidCard); return; }
+    }
+    setPaying(true);
+    setTimeout(() => {
+      setEnrolled(prev => [...prev, ...cart.map(c => c.id).filter(id => !prev.includes(id))]);
+      setCart([]); setPaying(false); setPayDone(true);
+      setCard({ num: "", name: "", exp: "", cvv: "" });
+    }, 1800);
   };
 
   const enrollFree = (c) => {
@@ -943,6 +1004,88 @@ function App() {
     </div>
   );
 
+  // ---------- หน้าชำระเงิน (จำลอง) ----------
+  const inputCls = "w-full border border-zinc-300 rounded-lg px-3 py-3 text-base focus:outline-none focus:ring-2 focus:ring-violet-500";
+  const Checkout = (
+    <div className="max-w-lg mx-auto px-4 py-6 pb-24 sm:pb-10">
+      {payDone ? (
+        <div className="text-center py-14">
+          <CheckCircle2 className="w-16 h-16 text-emerald-600 mx-auto" />
+          <h1 className="text-2xl font-extrabold mt-4">{t.paySuccess}</h1>
+          <p className="text-zinc-500 mt-2">{t.paySuccessSub}</p>
+          <button onClick={() => setPage("mylearning")} className="mt-6 bg-violet-700 hover:bg-violet-800 text-white font-bold px-6 py-3 rounded-lg">{t.goLearn}</button>
+        </div>
+      ) : (
+        <>
+          <button onClick={() => setPage("cart")} className="flex items-center gap-1 text-sm text-zinc-500 hover:text-zinc-900 mb-3">
+            <ArrowLeft className="w-4 h-4" /> {t.backToCart}
+          </button>
+          <h1 className="text-2xl font-extrabold">{t.payTitle}</h1>
+
+          <div className="bg-amber-50 border border-amber-300 text-amber-800 text-sm font-bold rounded-lg p-3 mt-3">
+            ⚠️ {t.demoPayNote}
+          </div>
+
+          <div className="border border-zinc-200 rounded-lg p-4 mt-4">
+            <h2 className="font-bold text-sm text-zinc-500 uppercase mb-2">{t.orderSummary}</h2>
+            {cart.map(c => (
+              <div key={c.id} className="flex justify-between text-sm py-1">
+                <span className="text-zinc-700 line-clamp-1 pr-3">{L(c.title)}</span>
+                <span className="font-bold shrink-0">฿{fmt(c.price)}</span>
+              </div>
+            ))}
+            <div className="flex justify-between font-extrabold text-lg mt-2 pt-2 border-t border-zinc-200">
+              <span>{t.total}</span><span>฿{fmt(totalPrice)}</span>
+            </div>
+          </div>
+
+          <h2 className="font-bold mt-5 mb-2">{t.payMethodLabel}</h2>
+          <div className="grid grid-cols-2 gap-2">
+            <button onClick={() => setPayMethod("card")}
+              className={`flex items-center justify-center gap-2 py-3 rounded-lg border text-sm font-bold ${payMethod === "card" ? "border-violet-700 bg-violet-50 text-violet-800" : "border-zinc-300 text-zinc-600"}`}>
+              <CreditCard className="w-4 h-4" /> {t.cardMethod}
+            </button>
+            <button onClick={() => setPayMethod("qr")}
+              className={`flex items-center justify-center gap-2 py-3 rounded-lg border text-sm font-bold ${payMethod === "qr" ? "border-violet-700 bg-violet-50 text-violet-800" : "border-zinc-300 text-zinc-600"}`}>
+              <QrCode className="w-4 h-4" /> {t.promptpay}
+            </button>
+          </div>
+
+          {payMethod === "card" ? (
+            <div className="mt-4 space-y-3">
+              <input value={card.num} onChange={e => setCard({ ...card, num: formatCardNum(e.target.value) })}
+                placeholder={t.cardNumber + " (0000 0000 0000 0000)"} inputMode="numeric" className={inputCls} />
+              <input value={card.name} onChange={e => setCard({ ...card, name: e.target.value })}
+                placeholder={t.cardName} className={inputCls} />
+              <div className="grid grid-cols-2 gap-3">
+                <input value={card.exp} onChange={e => setCard({ ...card, exp: formatExp(e.target.value) })}
+                  placeholder={t.expiry} inputMode="numeric" className={inputCls} />
+                <input value={card.cvv} onChange={e => setCard({ ...card, cvv: e.target.value.replace(/\D/g, "").slice(0, 4) })}
+                  placeholder={t.cvvLabel} inputMode="numeric" type="password" className={inputCls} />
+              </div>
+              <button onClick={() => setCard({ num: "4242 4242 4242 4242", name: "DEMO USER", exp: "12/29", cvv: "123" })}
+                className="text-sm text-violet-700 font-bold">✨ {t.useTestCard}</button>
+            </div>
+          ) : (
+            <div className="mt-4 border border-zinc-200 rounded-lg p-6 text-center">
+              <div className="w-40 h-40 mx-auto bg-white border-4 border-zinc-900 rounded-lg flex items-center justify-center">
+                <QrCode className="w-28 h-28 text-zinc-900" />
+              </div>
+              <p className="text-sm text-zinc-500 mt-3">{t.scanQr}</p>
+              <p className="font-extrabold text-lg mt-1">฿{fmt(totalPrice)}</p>
+            </div>
+          )}
+
+          <button onClick={completePayment} disabled={paying}
+            className="w-full bg-violet-700 hover:bg-violet-800 disabled:opacity-60 text-white font-bold py-4 rounded-lg mt-5 flex items-center justify-center gap-2">
+            {paying ? (<><Loader2 className="w-5 h-5 animate-spin" /> {t.processing}</>) : (payMethod === "card" ? `${t.payNow} — ฿${fmt(totalPrice)}` : t.confirmPaid)}
+          </button>
+          <p className="text-xs text-zinc-400 text-center mt-2 flex items-center justify-center gap-1"><Lock className="w-3 h-3" /> {t.secureNote}</p>
+        </>
+      )}
+    </div>
+  );
+
   // ---------- คอร์สของฉัน ----------
   const myCourses = COURSES.filter(c => enrolled.includes(c.id));
   const MyLearning = (
@@ -1084,6 +1227,7 @@ function App() {
       {page === "detail" && Detail}
       {page === "learn" && Learn}
       {page === "cart" && Cart}
+      {page === "checkout" && Checkout}
       {page === "mylearning" && MyLearning}
       {AuthModal}
       {BottomNav}
